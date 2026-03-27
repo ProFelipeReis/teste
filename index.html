@@ -7894,32 +7894,39 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-/* ── Prevent overscroll bounce on iOS Safari & Android Chrome ── */
-(function() {
-  var startY = 0;
-  document.addEventListener('touchstart', function(e) {
-    startY = e.touches[0].clientY;
+/* ── No-bounce: iOS Safari & Android Chrome ── */
+(function () {
+  var lastY = 0;
+
+  document.addEventListener('touchstart', function (e) {
+    lastY = e.touches[0].pageY;
   }, { passive: true });
 
-  document.addEventListener('touchmove', function(e) {
+  document.addEventListener('touchmove', function (e) {
+    var currentY = e.touches[0].pageY;
+    var dy = currentY - lastY;
+
+    // Walk up from the touched element looking for a scrollable container
     var el = e.target;
-    // Find the closest scrollable ancestor
-    while (el && el !== document.body) {
-      var style = window.getComputedStyle(el);
-      var overflowY = style.overflowY;
-      var isScrollable = (overflowY === 'auto' || overflowY === 'scroll');
-      if (isScrollable && el.scrollHeight > el.clientHeight) {
-        var dy = e.touches[0].clientY - startY;
-        // At top and trying to scroll up → block
-        if (dy > 0 && el.scrollTop === 0) { e.preventDefault(); return; }
-        // At bottom and trying to scroll down → block
-        if (dy < 0 && el.scrollTop + el.clientHeight >= el.scrollHeight) { e.preventDefault(); return; }
-        // Within bounds → allow scroll normally
+    while (el && el !== document.documentElement) {
+      var cs = window.getComputedStyle(el);
+      var oy = cs.overflowY;
+      if ((oy === 'scroll' || oy === 'auto') && el.scrollHeight > el.clientHeight) {
+        // Found a real scrollable container
+        var atTop    = el.scrollTop <= 0;
+        var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+
+        // Only block if we're trying to bounce past a boundary
+        if (atTop && dy > 0)    { e.preventDefault(); return; }
+        if (atBottom && dy < 0) { e.preventDefault(); return; }
+
+        // Still within scroll range — let native scroll continue
         return;
       }
       el = el.parentElement;
     }
-    // No scrollable ancestor found → block bounce on the page itself
+
+    // Nothing scrollable found → block page-level bounce
     e.preventDefault();
   }, { passive: false });
 })();
