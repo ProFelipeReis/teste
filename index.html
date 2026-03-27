@@ -165,13 +165,13 @@
     .toast.error::before { content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%; background: var(--red); border-radius: 3px 0 0 3px; }
     @keyframes toastIn { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.35); backdrop-filter: blur(6px); display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 760px; max-height: calc(100dvh - 32px); display: flex; flex-direction: column; box-shadow: var(--shadow-md); overscroll-behavior: contain; margin: auto 0; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.35); backdrop-filter: blur(6px); display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; touch-action: pan-y; overscroll-behavior: none; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 760px; max-height: calc(100dvh - 32px); display: flex; flex-direction: column; box-shadow: var(--shadow-md); overscroll-behavior: none; margin: auto 0; }
     .modal-sm { max-width: 460px; }
     .modal-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); background: #111110; z-index: 1; border-radius: 20px 20px 0 0; }
     .modal-header h3 { font-family: var(--head); font-size: 1.05rem; font-weight: 800; color: #ffffff; }
     .modal-header p, .modal-header span { color: rgba(255,255,255,0.6) !important; }
-    .modal-body { flex: 1; overflow-y: auto; padding: 24px; touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .modal-body { flex: 1; overflow-y: auto; padding: 24px; touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: none; }
     .modal-footer { flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
     @media(max-width:520px){ .modal-footer { padding: 12px 16px; gap: 6px; } .modal-footer .btn { flex: 1; min-width: 0; justify-content: center; font-size: .8rem; padding: 9px 10px; } }
     .close-btn { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: .95rem; transition: all .15s; }
@@ -263,14 +263,14 @@
     .gear-btn:hover { color: var(--accent); background: rgba(245,200,0,.1); transform: rotate(45deg); }
 
     .app-layout { display: flex; flex: 1; height: calc(100vh - 62px); min-height: 0; }
-    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 10px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; overflow-y: auto; }
+    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 10px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; overflow-y: auto; overscroll-behavior-y: none; }
     .sidebar-section { font-size: .68rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .12em; padding: 14px 12px 8px; }
     .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r); font-size: .88rem; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .15s; position: relative; }
     .sidebar-item:hover { background: var(--surface2); color: var(--text); }
     .sidebar-item.active { background: var(--accent-dim); color: #111110; font-weight: 700; }
     .sidebar-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; background: var(--accent); border-radius: 0 3px 3px 0; }
 
-    .main-content { flex: 1; overflow-y: auto; padding: 28px; background: var(--bg); display: flex; flex-direction: column; }
+    .main-content { flex: 1; overflow-y: auto; padding: 28px; background: var(--bg); display: flex; flex-direction: column; overscroll-behavior-y: none; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; flex: 1; }
     /* O tab de chat precisa de flex para distribuir altura */
@@ -7891,45 +7891,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-</script>
-
-<script>
-/* ── No-bounce: iOS Safari & Android Chrome ── */
-(function () {
-  var lastY = 0;
-
-  document.addEventListener('touchstart', function (e) {
-    lastY = e.touches[0].pageY;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function (e) {
-    var currentY = e.touches[0].pageY;
-    var dy = currentY - lastY;
-
-    // Walk up from the touched element looking for a scrollable container
-    var el = e.target;
-    while (el && el !== document.documentElement) {
-      var cs = window.getComputedStyle(el);
-      var oy = cs.overflowY;
-      if ((oy === 'scroll' || oy === 'auto') && el.scrollHeight > el.clientHeight) {
-        // Found a real scrollable container
-        var atTop    = el.scrollTop <= 0;
-        var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-
-        // Only block if we're trying to bounce past a boundary
-        if (atTop && dy > 0)    { e.preventDefault(); return; }
-        if (atBottom && dy < 0) { e.preventDefault(); return; }
-
-        // Still within scroll range — let native scroll continue
-        return;
-      }
-      el = el.parentElement;
-    }
-
-    // Nothing scrollable found → block page-level bounce
-    e.preventDefault();
-  }, { passive: false });
-})();
 </script>
 </body>
 </html>
