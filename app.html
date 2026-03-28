@@ -4271,14 +4271,6 @@ window.exportPlanPDF=function(planId, studentName){
 <scr'+'ipt>window.onload=function(){window.print();}<\/script>
 
 
-<script>
-/* Bloqueia long-press / seleção apenas em touch */
-(function(){
-  if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
-  document.addEventListener('selectstart', function(e){ e.preventDefault(); });
-  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-})();
-</script>
 </body>
 </html>`;
 
@@ -8020,10 +8012,8 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: flex-end;
     justify-content: center;
     padding: 0 0 env(safe-area-inset-bottom);
-    animation: safariOverlayIn .3s cubic-bezier(.22,1,.36,1);
   }
   #safari-tutorial-overlay.on { display: flex; }
-  @keyframes safariOverlayIn { from { opacity: 0; } to { opacity: 1; } }
 
   .safari-tutorial-modal {
     background: var(--surface);
@@ -8064,14 +8054,12 @@ document.addEventListener('DOMContentLoaded', function() {
   .safari-tutorial-header-text h3 {
     font-family: var(--head);
     font-size: 1rem; font-weight: 800;
-    color: #ffffff;
-    line-height: 1.2;
+    color: #ffffff; line-height: 1.2;
   }
   .safari-tutorial-header-text p {
     font-size: .74rem;
     color: rgba(255,255,255,.5);
-    margin-top: 3px;
-    font-weight: 500;
+    margin-top: 3px; font-weight: 500;
   }
 
   .safari-tutorial-body {
@@ -8082,15 +8070,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   .safari-tutorial-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 18px;
+    display: flex; flex-direction: column;
+    gap: 12px; margin-bottom: 18px;
   }
   .safari-tutorial-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     background: var(--surface2);
     border: 1.5px solid var(--border);
     border-radius: var(--r);
@@ -8102,97 +8086,61 @@ document.addEventListener('DOMContentLoaded', function() {
     background: var(--accent);
     color: #111110;
     font-family: var(--head);
-    font-size: .82rem;
-    font-weight: 800;
+    font-size: .82rem; font-weight: 800;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
+    flex-shrink: 0; margin-top: 1px;
   }
   .safari-step-text {
-    font-size: .86rem;
-    color: var(--text2);
-    line-height: 1.55;
-    font-weight: 500;
+    font-size: .86rem; color: var(--text2);
+    line-height: 1.55; font-weight: 500;
   }
-  .safari-step-text strong {
-    color: var(--text);
-    font-weight: 700;
-  }
+  .safari-step-text strong { color: var(--text); font-weight: 700; }
   .safari-step-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface3);
-    border: 1px solid var(--border2);
-    border-radius: 6px;
-    padding: 2px 6px;
-    margin: 0 2px;
-    font-size: .78rem;
-    vertical-align: middle;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface3); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 2px 6px; margin: 0 2px;
+    font-size: .78rem; vertical-align: middle;
   }
 
   .safari-tutorial-video-wrap {
-    border-radius: var(--r2);
-    overflow: hidden;
+    border-radius: var(--r2); overflow: hidden;
     border: 1.5px solid var(--border);
-    background: #111110;
-    margin-bottom: 20px;
-    position: relative;
+    background: #111110; margin-bottom: 20px;
   }
   .safari-tutorial-video-wrap video {
-    width: 100%;
-    display: block;
+    width: 100%; display: block;
     pointer-events: none;
-    user-select: none;
-    -webkit-user-select: none;
+    user-select: none; -webkit-user-select: none;
   }
 
   .safari-tutorial-footer {
     flex-shrink: 0;
     padding: 14px 24px 20px;
     border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: flex; flex-direction: column; gap: 12px;
   }
   .safari-tutorial-check-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
   }
   .safari-tutorial-check-row input[type=checkbox] {
     width: 18px; height: 18px;
     accent-color: var(--accent);
-    flex-shrink: 0;
-    cursor: pointer;
+    flex-shrink: 0; cursor: pointer;
   }
   .safari-tutorial-check-row span {
-    font-size: .83rem;
-    color: var(--text2);
-    font-weight: 600;
+    font-size: .83rem; color: var(--text2); font-weight: 600;
   }
   .safari-tutorial-btn {
-    width: 100%;
-    padding: 13px;
-    border-radius: var(--r);
+    width: 100%; padding: 13px; border-radius: var(--r);
     background: linear-gradient(135deg, #3d3830 0%, #28231a 50%, #1a1610 100%);
-    color: #ffffff;
-    font-family: var(--body);
-    font-size: .92rem;
-    font-weight: 800;
+    color: #ffffff; font-family: var(--body);
+    font-size: .92rem; font-weight: 800;
     border: 1px solid rgba(245,200,0,.18);
     box-shadow: 0 2px 8px rgba(0,0,0,.2);
-    cursor: pointer;
-    transition: all .15s;
-    letter-spacing: .02em;
+    cursor: pointer; transition: all .15s; letter-spacing: .02em;
   }
-  .safari-tutorial-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(0,0,0,.22);
-  }
-  .safari-tutorial-btn:active { transform: none; }
+  .safari-tutorial-btn:active { opacity: .85; }
 </style>
 
 <div id="safari-tutorial-overlay">
@@ -8234,14 +8182,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="safari-tutorial-video-wrap">
         <video
           src="https://raw.githubusercontent.com/felipereiscruz/videos/main/0328.mp4"
-          autoplay
-          muted
-          loop
-          playsinline
-          webkit-playsinline
-          disablePictureInPicture
-          disableRemotePlayback
-          preload="auto"
+          autoplay muted loop playsinline webkit-playsinline
+          disablePictureInPicture disableRemotePlayback preload="auto"
         ></video>
       </div>
     </div>
@@ -8258,27 +8200,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 (function() {
-  // Detecta Safari no iOS (não Chrome/Firefox/etc.)
   function isIOSSafari() {
     var ua = navigator.userAgent;
-    var isIOS = /iP(hone|od|ad)/.test(ua);
-    if (!isIOS) return false;
-    // Safari puro: tem "Safari" mas não "CriOS" (Chrome) nem "FxiOS" (Firefox) nem "OPiOS" (Opera)
-    var isSafari = /Safari/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua);
-    return isSafari;
+    if (!/iP(hone|od|ad)/.test(ua)) return false;
+    return /Safari/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua);
   }
 
-  // Já está instalado como PWA?
   function isInStandaloneMode() {
     return (window.navigator.standalone === true) ||
            (window.matchMedia('(display-mode: standalone)').matches);
   }
 
+  function shouldShow() {
+    if (!isIOSSafari()) return false;
+    if (isInStandaloneMode()) return false;
+    try { if (localStorage.getItem('trainly_safari_tutorial_dismissed') === '1') return false; } catch(e) {}
+    return true;
+  }
+
   function openSafariTutorial() {
     var overlay = document.getElementById('safari-tutorial-overlay');
-    if (overlay) overlay.classList.add('on');
-    // Tenta iniciar o vídeo (necessário em alguns iOS)
-    var vid = overlay ? overlay.querySelector('video') : null;
+    if (!overlay) return;
+    overlay.classList.add('on');
+    var vid = overlay.querySelector('video');
     if (vid) { try { vid.play().catch(function(){}); } catch(e){} }
   }
 
@@ -8289,39 +8233,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (chk && chk.checked) {
       try { localStorage.setItem('trainly_safari_tutorial_dismissed', '1'); } catch(e) {}
     }
-    // Para o vídeo ao fechar
     var vid = overlay ? overlay.querySelector('video') : null;
     if (vid) { try { vid.pause(); } catch(e){} }
   };
 
-  // Hook no showDashboardAfterLogin: exibe após entrar na tela principal
-  var _origShowDashboard = null;
-  function hookShowDashboard() {
-    if (window.showDashboardAfterLogin) {
-      _origShowDashboard = window.showDashboardAfterLogin;
-      window.showDashboardAfterLogin = window.showDashboard = function(userData) {
-        _origShowDashboard(userData);
-        // Aguarda a tela carregar antes de exibir o tutorial
-        setTimeout(function() {
-          if (!isIOSSafari()) return;
-          if (isInStandaloneMode()) return;
-          try {
-            if (localStorage.getItem('trainly_safari_tutorial_dismissed') === '1') return;
-          } catch(e) {}
-          openSafariTutorial();
-        }, 900);
-      };
-    } else {
-      setTimeout(hookShowDashboard, 100);
-    }
-  }
-
-  // Aguarda o DOM estar pronto para fazer o hook
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', hookShowDashboard);
-  } else {
-    hookShowDashboard();
-  }
+  // Observa quando #screen-dashboard se torna visível — sem interferir no login
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!shouldShow()) return;
+    var dashboard = document.getElementById('screen-dashboard');
+    if (!dashboard) return;
+    var shown = false;
+    var observer = new MutationObserver(function() {
+      if (shown) return;
+      var s = dashboard.style.display;
+      if (s && s !== 'none') {
+        shown = true;
+        observer.disconnect();
+        setTimeout(openSafariTutorial, 900);
+      }
+    });
+    observer.observe(dashboard, { attributes: true, attributeFilter: ['style'] });
+  });
 })();
 </script>
 
