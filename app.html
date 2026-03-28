@@ -113,13 +113,20 @@
     .freq-cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 6px; }
     .freq-cal-wday { text-align: center; font-size: .62rem; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; padding: 4px 0; }
     .freq-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
-    .freq-cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 600; color: var(--text2); position: relative; }
+    .freq-cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 600; color: var(--text2); position: relative; transition: transform .1s, box-shadow .1s; }
     .freq-cal-day.empty { pointer-events: none; }
     .freq-cal-day.trained { background: var(--green-dim); color: var(--green); font-weight: 800; border: 1.5px solid rgba(46,125,82,.35); }
     .freq-cal-day.trained::after { content: '✓'; position: absolute; bottom: 2px; right: 3px; font-size: .5rem; color: var(--green); font-weight: 900; }
+    .freq-cal-day.missed-cal { background: var(--red-dim); color: var(--red); font-weight: 700; border: 1.5px solid rgba(224,62,62,.25); }
+    .freq-cal-day.missed-cal::after { content: '!'; position: absolute; bottom: 2px; right: 3px; font-size: .5rem; color: var(--red); font-weight: 900; }
+    .freq-cal-day.rest-cal { background: var(--surface2); color: var(--text3); font-weight: 600; border: 1.5px solid var(--border); }
+    .freq-cal-day.rest-cal::after { content: 'Z'; position: absolute; bottom: 2px; right: 3px; font-size: .45rem; color: var(--text3); font-weight: 900; }
+    .freq-cal-day[style*="cursor:pointer"]:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,.12); z-index: 1; }
     .freq-cal-day.today-cal { border: 2px solid var(--accent); font-weight: 800; color: #8a6200; }
     .freq-cal-day.trained.today-cal { color: var(--green); }
-    .freq-cal-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .freq-tl-dot-clickable { transition: transform .12s, box-shadow .12s; }
+    .freq-tl-dot-clickable:hover { transform: scale(1.18); box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    .freq-cal-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .freq-cal-month-stat { font-size: .8rem; font-weight: 700; color: var(--text2); }
     .freq-cal-month-stat strong { color: var(--text); }
 
@@ -1134,6 +1141,16 @@
     }
     .trial-dash-btn:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(245,200,0,.4); }
     .has-invite #screen-login { display: none !important; }
+  
+    /* ── Desativa seleção de texto apenas em dispositivos touch/mobile ── */
+    @media (hover: none) and (pointer: coarse) {
+      * {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+      }
+    }
   </style>
   <link rel="apple-touch-icon" sizes="180x180" href="https://i.imgur.com/OKl5PjJ.png"/>
   <link rel="icon" type="image/png" href="https://i.imgur.com/OKl5PjJ.png"/>
@@ -3078,6 +3095,7 @@ function _modalTouchMove(e){
 }
 const genCode=()=>{const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('')};
 const initials=n=>{const p=n.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase()};
+const fmtLocalYMD=(date=new Date())=>{const d=new Date(date);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 
 window.isExpired=p=>{if(!p.expiry)return false;return new Date(p.expiry)<new Date(new Date().toDateString())};
 window.isNotStarted=p=>{if(!p.startDate)return false;return new Date(p.startDate+'T00:00')>new Date(new Date().toDateString())};
@@ -3424,7 +3442,7 @@ window.addStudent = async () => {
     // Save initial assessment if physical data provided
     if(hasPhysical) {
       await _setDoc(_doc(_db,'students',studentId,'assessments',Date.now().toString()), {
-        date: new Date().toISOString().split('T')[0],
+        date: fmtLocalYMD(),
         ts: Date.now(),
         weight, height, imc, fat, measures
       });
@@ -3515,7 +3533,7 @@ window.saveEditStudent = async () => {
     // Save assessment if physical data filled
     if(hasPhysical) {
       await _setDoc(_doc(_db,'students',sid,'assessments',Date.now().toString()), {
-        date: new Date().toISOString().split('T')[0],
+        date: fmtLocalYMD(),
         ts: Date.now(),
         weight, height, imc, fat, measures
       });
@@ -3548,6 +3566,15 @@ window.showStudentsList=()=>{
 };
 
 window.openStudentDetail = async sid => {
+  // Cancela listener de frequência do aluno anterior, se houver
+  if (window._freqUnsubMap) {
+    Object.keys(window._freqUnsubMap).forEach(prevSid => {
+      if (prevSid !== sid && window._freqUnsubMap[prevSid]) {
+        window._freqUnsubMap[prevSid]();
+        delete window._freqUnsubMap[prevSid];
+      }
+    });
+  }
   const s = ST.students.find(x => x.id === sid); if(!s) return; ST.currentStudentId = sid;
   const snap = await _getDocs(_query(_col(_db,'plans'),_where('studentId','==',sid)));
   const plans = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.createdAt-a.createdAt);
@@ -3768,102 +3795,161 @@ window.loadStudentEvolution = async function(sid) {
 };
 
 // ── Frequência de Treinos ──
-window._freqCalState = {}; // { sid: { year, month } }
+// ══════════════════════════════════════════════════════════════
+// SISTEMA DE FREQUÊNCIA — attendance/{studentId}/days/{YYYY-MM-DD}
+// Hora sempre via API do Brasil, fallback Intl
+// Treinador pode clicar em qualquer bolinha para alternar status
+// ══════════════════════════════════════════════════════════════
+
+window._freqCalState    = {}; // { sid: { year, month } }
+window._freqAttData     = {}; // { sid: { 'YYYY-MM-DD': 'trained'|'missed'|'rest' } }
+window._freqUnsubMap    = {}; // { sid: unsubFn }
+window._freqTodayBRCache = null;
+
+// Obtém data BR (America/Sao_Paulo) em YYYY-MM-DD via API, fallback Intl
+async function _trainerFreqGetTodayBR() {
+  if (window._freqTodayBRCache) return window._freqTodayBRCache;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 3000);
+    const r = await fetch('https://worldtimeapi.org/api/timezone/America/Sao_Paulo', {signal: ctrl.signal});
+    clearTimeout(tid);
+    const j = await r.json();
+    const ds = j.datetime.slice(0,10);
+    window._freqTodayBRCache = ds;
+    const now = new Date(j.datetime);
+    const msTilMid = new Date(now.getFullYear(),now.getMonth(),now.getDate()+1) - now;
+    setTimeout(() => { window._freqTodayBRCache = null; }, msTilMid + 500);
+    return ds;
+  } catch(e) {
+    const ds = new Date().toLocaleDateString('sv-SE', {timeZone:'America/Sao_Paulo'});
+    window._freqTodayBRCache = ds;
+    setTimeout(() => { window._freqTodayBRCache = null; }, 60000);
+    return ds;
+  }
+}
+
+// Escreve um status de attendance (trainer pode editar qualquer dia)
+async function _trainerFreqWrite(sid, dateStr, status) {
+  await _db.collection('attendance').doc(sid).collection('days').doc(dateStr).set({
+    status,
+    updatedAt: Date.now(),
+    updatedBy: (window.CURRENT_USER && window.CURRENT_USER.username) || 'trainer'
+  }, {merge: true});
+}
+
+// Inicia listener onSnapshot para um aluno
+function _trainerFreqStartListener(sid) {
+  if (window._freqUnsubMap[sid]) { window._freqUnsubMap[sid](); }
+  const ref = _db.collection('attendance').doc(sid).collection('days');
+  window._freqUnsubMap[sid] = ref.onSnapshot(snap => {
+    const att = {};
+    snap.docs.forEach(d => { att[d.id] = d.data().status || 'trained'; });
+    window._freqAttData[sid] = att;
+    // Re-renderiza se o container ainda estiver na tela
+    const container = document.getElementById('freq-content-' + sid);
+    if (container) _trainerRenderFreqSection(sid, container);
+  }, err => console.warn('freq listener trainer:', err));
+}
 
 window.loadStudentFrequency = async function(sid) {
   const container = document.getElementById('freq-content-' + sid);
   if (!container) return;
-  // If already loaded and not spinner, don't reload
-  if (container.querySelector('.freq-tl-row')) return;
-  container.innerHTML = '<div class="spinner"></div>';
-  try {
-    // Busca notificações de treino deste aluno
-    const snap = await _getDocs(_query(
-      _col(_db, 'notifications'),
-      _where('studentId', '==', sid)
-    ));
-    const allNotifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const workoutNotifs = allNotifs.filter(n =>
-      n.type === 'workout_started' || n.type === 'workout_done' || n.type === 'workout_finished'
-    );
-
-    // Extrai datas únicas no formato 'YYYY-MM-DD'
-    const trainedDays = new Set();
-    workoutNotifs.forEach(n => {
-      const ts = n.timestamp || n.ts || n.date;
-      if (!ts) return;
-      const d = new Date(typeof ts === 'number' ? ts : ts);
-      if (isNaN(d)) return;
-      trainedDays.add(d.toISOString().slice(0, 10));
-    });
-
-    renderFrequencySection(sid, trainedDays, container);
-  } catch(e) {
-    container.innerHTML = `<div style="color:var(--text3);padding:20px;font-size:.85rem;">Erro ao carregar frequência: ${e.message}</div>`;
-  }
+  container.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:6px auto;"></div>';
+  // Garante data BR em cache
+  await _trainerFreqGetTodayBR();
+  // Inicia listener (substitui eventual listener anterior deste sid)
+  _trainerFreqStartListener(sid);
 };
 
-function renderFrequencySection(sid, trainedDays, container) {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+function _trainerRenderFreqSection(sid, container) {
+  const att = window._freqAttData[sid] || {};
+  const todayStr = window._freqTodayBRCache || new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
   const DAY_LABELS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
-  // ── Semana atual (Seg–Dom) ──
-  const weekStart = new Date(now);
-  const dow = now.getDay();
-  const diffToMon = (dow === 0) ? -6 : 1 - dow;
-  weekStart.setDate(now.getDate() + diffToMon);
+  const todayDate = new Date(todayStr + 'T12:00:00');
+  const dow = todayDate.getDay();
+  const weekStart = new Date(todayDate);
+  weekStart.setDate(todayDate.getDate() + ((dow === 0) ? -6 : 1 - dow));
 
   let dotsHTML = '';
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
-    const ds = d.toISOString().slice(0, 10);
-    const trained  = trainedDays.has(ds);
+    const ds = d.toLocaleDateString('sv-SE');
+    const status   = att[ds] || null;
+    const trained  = status === 'trained';
+    const missed   = status === 'missed';
+    const rest     = status === 'rest';
     const isToday  = ds === todayStr;
     const isFuture = ds > todayStr;
     const isPast   = ds < todayStr;
     const dayLabel = DAY_LABELS[d.getDay()];
 
-    // linha conectora antes de cada bolinha (exceto a primeira)
-    const lineClass = trained ? ' trained' : (isPast && !isToday ? ' missed' : '');
-    const line = i > 0
-      ? `<div class="freq-tl-line${lineClass}"></div>`
-      : '';
+    let lineClass = '';
+    if (trained) lineClass = ' trained';
+    else if (missed || (isPast && !isToday && !rest)) lineClass = ' missed';
 
-    let dotClass = 'freq-tl-dot';
+    const line = i > 0 ? `<div class="freq-tl-line${lineClass}"></div>` : '';
+
+    let dotClass = 'freq-tl-dot freq-tl-dot-clickable';
     let dotInner = '';
+    // Tooltip para indicar que é clicável
+    const tipMap = {trained:'Treinado — clique para alterar', missed:'Faltou — clique para alterar',
+      rest:'Descanso — clique para alterar', future:'Dia futuro', today:'Hoje — clique para marcar'};
+    let tip = '';
 
     if (trained) {
-      dotClass += ' trained';
+      dotClass += ' trained'; tip = tipMap.trained;
       dotInner = `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="var(--green)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (rest) {
+      dotClass += ' future'; tip = tipMap.rest;
+      dotInner = `<span style="font-size:.62rem;font-weight:900;color:var(--text3);line-height:1;">Z</span>`;
     } else if (isFuture) {
-      dotClass += ' future';
+      dotClass += ' future'; tip = tipMap.future;
       dotInner = `<div style="width:5px;height:5px;border-radius:50%;background:var(--border2);opacity:.4;"></div>`;
     } else if (isToday) {
-      dotClass += ' today';
+      dotClass += ' today'; tip = tipMap.today;
       dotInner = `<div style="width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.7;"></div>`;
-    } else {
-      // dia passado sem treino → !
-      dotClass += ' missed';
+    } else if (missed) {
+      dotClass += ' missed'; tip = tipMap.missed;
+      dotInner = `<span style="font-size:.7rem;font-weight:900;color:var(--red);line-height:1;">!</span>`;
+    } else if (isPast) {
+      dotClass += ' missed'; tip = tipMap.missed;
       dotInner = `<span style="font-size:.7rem;font-weight:900;color:var(--red);line-height:1;">!</span>`;
     }
+
+    // Dias futuros não são editáveis
+    const clickable = !isFuture;
+    const clickAttr = clickable
+      ? `onclick="event.stopPropagation();_trainerFreqToggle('${sid}','${ds}')" title="${tip}" style="cursor:pointer;"`
+      : `title="${tip}"`;
 
     dotsHTML += `
       ${line}
       <div class="freq-tl-item">
-        <div class="${dotClass}">${dotInner}</div>
+        <div class="${dotClass}" ${clickAttr}>${dotInner}</div>
         <span class="freq-tl-lbl${isToday ? ' today' : ''}">${dayLabel}</span>
       </div>`;
   }
 
   container.innerHTML = `<div class="freq-tl-row">${dotsHTML}</div>`;
-
-  // Armazena dados para o calendário
-  window._freqData = window._freqData || {};
-  window._freqData[sid] = trainedDays;
-  window._freqCalState[sid] = { year: now.getFullYear(), month: now.getMonth() };
+  window._freqCalState[sid] = { year: todayDate.getFullYear(), month: todayDate.getMonth() };
 }
+
+// Toggle de status ao clicar numa bolinha (trainer)
+// Ciclo: sem registro → trained → missed → rest → trained
+window._trainerFreqToggle = async function(sid, ds) {
+  const att = window._freqAttData[sid] || {};
+  const cur = att[ds] || null;
+  const next = cur === null ? 'trained' : cur === 'trained' ? 'missed' : cur === 'missed' ? 'rest' : 'trained';
+  try {
+    await _trainerFreqWrite(sid, ds, next);
+    // onSnapshot atualiza automaticamente
+  } catch(e) {
+    toast('Erro ao salvar frequência: ' + e.message, 'error');
+  }
+};
 
 window.toggleFreqCalendar = function(sid) {
   const chevron = document.getElementById('freq-chevron-' + sid);
@@ -3872,15 +3958,13 @@ window.toggleFreqCalendar = function(sid) {
 };
 
 window.openFreqCalendar = function(sid) {
-  // Remove calendário existente se houver
   const existing = document.getElementById('freq-cal-overlay-' + sid);
   if (existing) {
     existing.remove();
-    document.body.style.overflow='';
-    document.body.style.touchAction='';
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
     return;
   }
-
   const state = window._freqCalState[sid] || { year: new Date().getFullYear(), month: new Date().getMonth() };
   renderFreqCalendar(sid, state.year, state.month);
 };
@@ -3889,34 +3973,36 @@ window.renderFreqCalendar = function(sid, year, month) {
   const existing = document.getElementById('freq-cal-overlay-' + sid);
   if (existing) existing.remove();
 
-  const trainedDays = window._freqData && window._freqData[sid] ? window._freqData[sid] : new Set();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const att = window._freqAttData[sid] || {};
+  const todayStr = window._freqTodayBRCache || new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
   const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const WDAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const WDAYS  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startOffset = firstDay.getDay(); // 0=Dom
-  const totalDays = lastDay.getDate();
-
-  // Dias treinados neste mês
-  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const monthCount = [...trainedDays].filter(d => d.startsWith(monthPrefix)).length;
+  const lastDay  = new Date(year, month + 1, 0);
+  const startOffset = firstDay.getDay();
+  const totalDays   = lastDay.getDate();
+  const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
+  const monthCount  = Object.keys(att).filter(d => d.startsWith(monthPrefix) && att[d]==='trained').length;
 
   let gridHTML = '';
-  // Células vazias antes do primeiro dia
-  for (let i = 0; i < startOffset; i++) {
-    gridHTML += '<div class="freq-cal-day empty"></div>';
-  }
-  // Dias do mês
+  for (let i = 0; i < startOffset; i++) gridHTML += '<div class="freq-cal-day empty"></div>';
   for (let d = 1; d <= totalDays; d++) {
-    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const trained = trainedDays.has(ds);
+    const ds = `${monthPrefix}-${String(d).padStart(2,'0')}`;
+    const status  = att[ds] || null;
+    const trained = status === 'trained';
+    const missed  = status === 'missed';
+    const rest    = status === 'rest';
     const isToday = ds === todayStr;
-    gridHTML += `<div class="freq-cal-day${trained ? ' trained' : ''}${isToday ? ' today-cal' : ''}">${d}</div>`;
+    const isFuture = ds > todayStr;
+    let cls = 'freq-cal-day';
+    if (trained) cls += ' trained';
+    else if (missed) cls += ' missed-cal';
+    else if (rest)   cls += ' rest-cal';
+    if (isToday) cls += ' today-cal';
+    const clickable = !isFuture;
+    gridHTML += `<div class="${cls}"${clickable ? ` onclick="_trainerFreqToggle('${sid}','${ds}')" style="cursor:pointer;" title="Clique para alternar status"` : ''}>${d}</div>`;
   }
-
-  const wdaysHTML = WDAYS.map(w => `<div class="freq-cal-wday">${w}</div>`).join('');
 
   const overlay = document.createElement('div');
   overlay.className = 'freq-cal-overlay';
@@ -3926,51 +4012,71 @@ window.renderFreqCalendar = function(sid, year, month) {
       <div class="freq-cal-header">
         <div class="freq-cal-title">${MONTHS[month]} ${year}</div>
         <div class="freq-cal-nav">
-          <button onclick="freqCalNav('${sid}',${year},${month},-1)" title="Mês anterior">
+          <button data-dir="-1" title="Mês anterior">
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <button onclick="freqCalNav('${sid}',${year},${month},1)" title="Próximo mês">
+          <button data-dir="1" title="Próximo mês">
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
       </div>
       <div class="freq-cal-body">
-        <div class="freq-cal-weekdays">${wdaysHTML}</div>
+        <div class="freq-cal-weekdays">${WDAYS.map(w => `<div class="freq-cal-wday">${w}</div>`).join('')}</div>
         <div class="freq-cal-grid">${gridHTML}</div>
       </div>
       <div class="freq-cal-footer">
-        <div class="freq-cal-month-stat"><strong>${monthCount}</strong> dia${monthCount !== 1 ? 's' : ''} treinado${monthCount !== 1 ? 's' : ''} em ${MONTHS[month]}</div>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('freq-cal-overlay-${sid}').remove();document.body.style.overflow='';document.body.style.touchAction='';document.getElementById('freq-chevron-${sid}') && document.getElementById('freq-chevron-${sid}').classList.remove('open')">Fechar</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div class="freq-cal-month-stat"><strong>${monthCount}</strong> dia${monthCount !== 1 ? 's' : ''} treinado${monthCount !== 1 ? 's' : ''} em ${MONTHS[month]}</div>
+          <div style="font-size:.68rem;color:var(--text3);font-weight:600;">Clique nos dias para editar</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="freq-cal-close-${sid}">Fechar</button>
       </div>
     </div>
   `;
+
+  overlay.querySelectorAll('.freq-cal-nav button').forEach(btn => {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      const dir = parseInt(btn.dataset.dir);
+      let m = month + dir, y = year;
+      if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+      renderFreqCalendar(sid, y, m);
+    };
+  });
+
+  overlay.querySelector('#freq-cal-close-' + sid).onclick = function() {
+    overlay.remove();
+    const chevron = document.getElementById('freq-chevron-' + sid);
+    if (chevron) chevron.classList.remove('open');
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+  };
+
   overlay.addEventListener('click', function(e) {
     if (e.target === overlay) {
       overlay.remove();
       const chevron = document.getElementById('freq-chevron-' + sid);
       if (chevron) chevron.classList.remove('open');
-      document.body.style.overflow='';
-      document.body.style.touchAction='';
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
   });
-  // Previne scroll da página atrás do overlay
   overlay.addEventListener('touchmove', function(e) {
-    var inner = overlay.querySelector('.freq-cal-modal');
-    var node = e.target;
+    const inner = overlay.querySelector('.freq-cal-modal');
+    let node = e.target;
     while (node && node !== overlay) { if (node === inner) return; node = node.parentNode; }
     e.preventDefault();
   }, {passive: false});
+
   document.body.appendChild(overlay);
-  document.body.style.overflow='hidden';
-  document.body.style.touchAction='none';
+  document.body.style.overflow = 'hidden';
+  document.body.style.touchAction = 'none';
   window._freqCalState[sid] = { year, month };
 };
 
 window.freqCalNav = function(sid, year, month, delta) {
-  let m = month + delta;
-  let y = year;
-  if (m < 0) { m = 11; y--; }
-  if (m > 11) { m = 0; y++; }
+  let m = month + delta, y = year;
+  if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
   renderFreqCalendar(sid, y, m);
 };
 
@@ -4164,6 +4270,15 @@ window.exportPlanPDF=function(planId, studentName){
 </div>
 <scr'+'ipt>window.onload=function(){window.print();}<\/script>
 
+
+<script>
+/* Bloqueia long-press / seleção apenas em touch */
+(function(){
+  if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
+  document.addEventListener('selectstart', function(e){ e.preventDefault(); });
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+})();
+</script>
 </body>
 </html>`;
 
@@ -7893,5 +8008,322 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
+
+<!-- ══ SAFARI iOS TUTORIAL MODAL ══ -->
+<style>
+  #safari-tutorial-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,.52);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom);
+    animation: safariOverlayIn .3s cubic-bezier(.22,1,.36,1);
+  }
+  #safari-tutorial-overlay.on { display: flex; }
+  @keyframes safariOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .safari-tutorial-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    animation: safariModalIn .35s cubic-bezier(.22,1,.36,1);
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  @keyframes safariModalIn {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .safari-tutorial-header {
+    flex-shrink: 0;
+    background: #111110;
+    padding: 20px 24px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: 24px 24px 0 0;
+  }
+  .safari-tutorial-icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    background: var(--accent-dim);
+    border: 1.5px solid var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.3rem;
+  }
+  .safari-tutorial-header-text h3 {
+    font-family: var(--head);
+    font-size: 1rem; font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+  .safari-tutorial-header-text p {
+    font-size: .74rem;
+    color: rgba(255,255,255,.5);
+    margin-top: 3px;
+    font-weight: 500;
+  }
+
+  .safari-tutorial-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .safari-tutorial-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .safari-tutorial-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 14px;
+  }
+  .safari-step-num {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #111110;
+    font-family: var(--head);
+    font-size: .82rem;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .safari-step-text {
+    font-size: .86rem;
+    color: var(--text2);
+    line-height: 1.55;
+    font-weight: 500;
+  }
+  .safari-step-text strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+  .safari-step-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-size: .78rem;
+    vertical-align: middle;
+  }
+
+  .safari-tutorial-video-wrap {
+    border-radius: var(--r2);
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    background: #111110;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .safari-tutorial-video-wrap video {
+    width: 100%;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .safari-tutorial-footer {
+    flex-shrink: 0;
+    padding: 14px 24px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .safari-tutorial-check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .safari-tutorial-check-row input[type=checkbox] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .safari-tutorial-check-row span {
+    font-size: .83rem;
+    color: var(--text2);
+    font-weight: 600;
+  }
+  .safari-tutorial-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: var(--r);
+    background: linear-gradient(135deg, #3d3830 0%, #28231a 50%, #1a1610 100%);
+    color: #ffffff;
+    font-family: var(--body);
+    font-size: .92rem;
+    font-weight: 800;
+    border: 1px solid rgba(245,200,0,.18);
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .02em;
+  }
+  .safari-tutorial-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
+  }
+  .safari-tutorial-btn:active { transform: none; }
+</style>
+
+<div id="safari-tutorial-overlay">
+  <div class="safari-tutorial-modal">
+    <div class="safari-tutorial-header">
+      <div class="safari-tutorial-icon">📲</div>
+      <div class="safari-tutorial-header-text">
+        <h3>Adicionar à Tela de Início</h3>
+        <p>Acesse o Trainly como um app nativo no iPhone</p>
+      </div>
+    </div>
+
+    <div class="safari-tutorial-body">
+      <div class="safari-tutorial-steps">
+        <div class="safari-tutorial-step">
+          <div class="safari-step-num">1</div>
+          <div class="safari-step-text">
+            Toque no botão <strong>Compartilhar</strong>
+            <span class="safari-step-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </span>
+            na barra inferior do Safari.
+          </div>
+        </div>
+        <div class="safari-tutorial-step">
+          <div class="safari-step-num">2</div>
+          <div class="safari-step-text">
+            Role o menu e toque em <strong>"Adicionar à Tela de Início"</strong>.
+          </div>
+        </div>
+        <div class="safari-tutorial-step">
+          <div class="safari-step-num">3</div>
+          <div class="safari-step-text">
+            Confirme tocando em <strong>"Adicionar"</strong> no canto superior direito.
+          </div>
+        </div>
+      </div>
+
+      <div class="safari-tutorial-video-wrap">
+        <video
+          src="https://raw.githubusercontent.com/felipereiscruz/videos/main/0328.mp4"
+          autoplay
+          muted
+          loop
+          playsinline
+          webkit-playsinline
+          disablePictureInPicture
+          disableRemotePlayback
+          preload="auto"
+        ></video>
+      </div>
+    </div>
+
+    <div class="safari-tutorial-footer">
+      <label class="safari-tutorial-check-row">
+        <input type="checkbox" id="safari-tutorial-no-show">
+        <span>Não mostrar novamente</span>
+      </label>
+      <button class="safari-tutorial-btn" onclick="closeSafariTutorial()">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Detecta Safari no iOS (não Chrome/Firefox/etc.)
+  function isIOSSafari() {
+    var ua = navigator.userAgent;
+    var isIOS = /iP(hone|od|ad)/.test(ua);
+    if (!isIOS) return false;
+    // Safari puro: tem "Safari" mas não "CriOS" (Chrome) nem "FxiOS" (Firefox) nem "OPiOS" (Opera)
+    var isSafari = /Safari/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/OPiOS/.test(ua);
+    return isSafari;
+  }
+
+  // Já está instalado como PWA?
+  function isInStandaloneMode() {
+    return (window.navigator.standalone === true) ||
+           (window.matchMedia('(display-mode: standalone)').matches);
+  }
+
+  function openSafariTutorial() {
+    var overlay = document.getElementById('safari-tutorial-overlay');
+    if (overlay) overlay.classList.add('on');
+    // Tenta iniciar o vídeo (necessário em alguns iOS)
+    var vid = overlay ? overlay.querySelector('video') : null;
+    if (vid) { try { vid.play().catch(function(){}); } catch(e){} }
+  }
+
+  window.closeSafariTutorial = function() {
+    var overlay = document.getElementById('safari-tutorial-overlay');
+    if (overlay) overlay.classList.remove('on');
+    var chk = document.getElementById('safari-tutorial-no-show');
+    if (chk && chk.checked) {
+      try { localStorage.setItem('trainly_safari_tutorial_dismissed', '1'); } catch(e) {}
+    }
+    // Para o vídeo ao fechar
+    var vid = overlay ? overlay.querySelector('video') : null;
+    if (vid) { try { vid.pause(); } catch(e){} }
+  };
+
+  // Hook no showDashboardAfterLogin: exibe após entrar na tela principal
+  var _origShowDashboard = null;
+  function hookShowDashboard() {
+    if (window.showDashboardAfterLogin) {
+      _origShowDashboard = window.showDashboardAfterLogin;
+      window.showDashboardAfterLogin = window.showDashboard = function(userData) {
+        _origShowDashboard(userData);
+        // Aguarda a tela carregar antes de exibir o tutorial
+        setTimeout(function() {
+          if (!isIOSSafari()) return;
+          if (isInStandaloneMode()) return;
+          try {
+            if (localStorage.getItem('trainly_safari_tutorial_dismissed') === '1') return;
+          } catch(e) {}
+          openSafariTutorial();
+        }, 900);
+      };
+    } else {
+      setTimeout(hookShowDashboard, 100);
+    }
+  }
+
+  // Aguarda o DOM estar pronto para fazer o hook
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hookShowDashboard);
+  } else {
+    hookShowDashboard();
+  }
+})();
+</script>
+
 </body>
 </html>
