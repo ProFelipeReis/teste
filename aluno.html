@@ -3484,12 +3484,12 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
     const app = initializeApp({
-      apiKey: "AIzaSyDumjYvEIDvhhTd5wDKQNzGs4xPUcwP9QY",
-      authDomain: "ambientedeteste-dc76d.firebaseapp.com",
-      projectId: "ambientedeteste-dc76d",
-      storageBucket: "ambientedeteste-dc76d.firebasestorage.app",
-      messagingSenderId: "312018265343",
-      appId: "1:312018265343:web:3a1a341f07ac4b2115d8ca"
+      apiKey: "AIzaSyBVhMJfE1Zj9sVHztDXHUtsC_Y2WIikrkU",
+      authDomain: "fichasacademia-8717d.firebaseapp.com",
+      projectId: "fichasacademia-8717d",
+      storageBucket: "fichasacademia-8717d.firebasestorage.app",
+      messagingSenderId: "501312058117",
+      appId: "1:501312058117:web:1b9ea06882050deeb33d6c"
     });
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -3557,36 +3557,33 @@
     const LS_TIMER_PREFIX = 'trainly_timer_';
     const LS_CHECKS_PREFIX = 'trainly_checks_';
 
-    // Retorna a chave do localStorage para os checks do dia atual
+    // Chave do localStorage para os checks do dia atual deste aluno
     function _checksKey() {
-      const code = _timerStudentCode();
-      return `${LS_CHECKS_PREFIX}${code}_${_todayStr()}`;
+      return `${LS_CHECKS_PREFIX}${_timerStudentCode()}_${_todayStr()}`;
     }
 
-    // Salva o checkState atual no localStorage (apenas os checks do dia de hoje)
+    // Persiste checkState no localStorage e remove chaves de dias anteriores
     function _saveChecks() {
       try {
         localStorage.setItem(_checksKey(), JSON.stringify(checkState));
-        // Remove chaves de dias anteriores deste aluno para não acumular lixo
-        const myPrefix = `${LS_CHECKS_PREFIX}${_timerStudentCode()}_`;
-        const todayKey = _checksKey();
-        const toRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
+        var myPrefix = `${LS_CHECKS_PREFIX}${_timerStudentCode()}_`;
+        var todayKey = _checksKey();
+        var toRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
           if (k && k.startsWith(myPrefix) && k !== todayKey) toRemove.push(k);
         }
-        toRemove.forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
-      } catch (e) { }
+        toRemove.forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
+      } catch(e) {}
     }
 
-    // Carrega os checks salvos do dia atual para o checkState em memória
+    // Restaura checks salvos do dia atual para o checkState em memória
     function _loadChecks() {
       try {
-        const raw = localStorage.getItem(_checksKey());
+        var raw = localStorage.getItem(_checksKey());
         if (!raw) return;
-        const saved = JSON.parse(raw);
-        Object.assign(checkState, saved);
-      } catch (e) { }
+        Object.assign(checkState, JSON.parse(raw));
+      } catch(e) {}
     }
 
     // Retorna o código do aluno atual (em minúsculas, sem espaços)
@@ -4058,7 +4055,7 @@
 
     function showApp(student) {
       _currentStudent = student;
-      _loadChecks(); // Restaura checks salvos do dia atual
+      _loadChecks(); // Restaura checks do dia salvos no localStorage
       document.getElementById('screen-login').style.display = 'none';
       document.getElementById('screen-app').style.cssText = 'display:flex;flex-direction:column;';
       document.getElementById('student-pill').textContent = student.name;
@@ -4838,20 +4835,19 @@
 
         // Restaura visualmente os checks salvos para este treino
         for (let ei2 = 0; ei2 < total; ei2++) {
-          const key2 = `${p.id}_${wi}_${ei2}`;
-          if (checkState[key2]) {
+          if (checkState[`${p.id}_${wi}_${ei2}`]) {
             const savedRow = acc.querySelector(`#exrow_${p.id}_${wi}_${ei2}`);
             if (savedRow) savedRow.classList.add('checked');
           }
         }
-        // Restaura a barra de progresso
+        // Restaura barra de progresso
         const pwRestore = acc.querySelector(`#${progressId}`);
         if (pwRestore) {
-          let doneRestore = 0;
-          for (let ei2 = 0; ei2 < total; ei2++) { if (checkState[`${p.id}_${wi}_${ei2}`]) doneRestore++; }
-          const pctRestore = total > 0 ? Math.round((doneRestore / total) * 100) : 0;
-          pwRestore.querySelector('.progress-bar-fill').style.width = pctRestore + '%';
-          pwRestore.querySelector('.progress-label').textContent = `${doneRestore}/${total} exercícios`;
+          let doneR = 0;
+          for (let ei2 = 0; ei2 < total; ei2++) { if (checkState[`${p.id}_${wi}_${ei2}`]) doneR++; }
+          const pctR = total > 0 ? Math.round((doneR / total) * 100) : 0;
+          pwRestore.querySelector('.progress-bar-fill').style.width = pctR + '%';
+          pwRestore.querySelector('.progress-label').textContent = `${doneR}/${total} exercícios`;
         }
 
         workoutsWrap.appendChild(acc);
