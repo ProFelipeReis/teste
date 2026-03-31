@@ -2840,12 +2840,12 @@ document.addEventListener('DOMContentLoaded',function(){
 
 <script>
 const _app = firebase.initializeApp({
-  apiKey:"AIzaSyBVhMJfE1Zj9sVHztDXHUtsC_Y2WIikrkU",
-  authDomain:"fichasacademia-8717d.firebaseapp.com",
-  projectId:"fichasacademia-8717d",
-  storageBucket:"fichasacademia-8717d.firebasestorage.app",
-  messagingSenderId:"501312058117",
-  appId:"1:501312058117:web:1b9ea06882050deeb33d6c"
+  apiKey:"AIzaSyDumjYvEIDvhhTd5wDKQNzGs4xPUcwP9QY",
+  authDomain:"ambientedeteste-dc76d.firebaseapp.com",
+  projectId:"ambientedeteste-dc76d",
+  storageBucket:"ambientedeteste-dc76d.firebasestorage.app",
+  messagingSenderId:"312018265343",
+  appId:"1:312018265343:web:3a1a341f07ac4b2115d8ca"
 });
 const _db = firebase.firestore();
 const _col = (db, ...paths) => { let ref = db.collection(paths[0]); for(let i=1;i<paths.length;i+=2){ if(paths[i+1]) ref = ref.doc(paths[i]).collection(paths[i+1]); } return ref; };
