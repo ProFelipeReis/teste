@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
       <div id="reg-processing" style="display:none;text-align:center;padding:20px 0;">
         <div class="spinner" style="margin:0 auto 16px;"></div>
-        <p style="font-weight:700;font-size:.95rem;color:var(--text);">Processando pagamento...</p>
+        <p style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
         <p style="font-size:.82rem;color:var(--text3);margin-top:6px;">Aguarde, isso leva alguns segundos.</p>
       </div>
 
@@ -7028,16 +7028,10 @@ window.inviteRegister = async function(){
       var invBySnap = await _db.collection('managers').where('username','==',invBy).get();
       if(!invBySnap.empty) invByRefCode = invBySnap.docs[0].data().referralCode || invBy;
     } catch(e) {}
-    // +7 dias se veio por indicação, +7 extras se usou DEBUGMODE
-    var invTrialDays = 7;
-    if(invBy) invTrialDays += 7; // 14 dias para indicados
-    var invRefInput = document.getElementById('reg-ref-code');
-    var invRefCode = (invRefInput ? invRefInput.value.trim() : '') || (window._pendingRefCode||'');
-    if(invRefCode.toUpperCase() === 'DEBUGMODE') invTrialDays += 7;
     await _db.collection('managers').doc(newId).set({
       username, passwordHash:hash, name: invName, role:'comum', isMaster:false,
       cref, crefDeclared:true,
-      trialEndsAt:Date.now()+invTrialDays*24*60*60*1000, subEndsAt:null,
+      trialEndsAt:Date.now()+7*24*60*60*1000, subEndsAt:null,
       blocked:false, createdAt:Date.now(), invitedBy:invBy, referredBy:invByRefCode
     });
     await _db.collection('invites').doc(window._invDocId).update({
@@ -7230,27 +7224,22 @@ window.regStep1Next = async function() {
   var refCodeWrap = document.getElementById('reg-ref-code-wrap');
   var refManual = refInput ? refInput.value.trim() : '';
   if(refManual && !window._pendingRefCode && refCodeWrap && refCodeWrap.style.display !== 'none') {
-    // DEBUGMODE é sempre válido — não precisa buscar no banco
-    if(refManual.toUpperCase() === 'DEBUGMODE') {
-      window._pendingRefCode = refManual;
-    } else {
-      var btn1 = document.querySelector('#reg-step1 .btn-primary');
-      if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
-      try {
-        // Busca pelo campo referralCode (código aleatório), não pelo username
-        var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
-        if(snap.empty) {
-          errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
-          if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
-          return;
-        }
-        // Código válido — armazena para usar no cadastro
-        window._pendingRefCode = refManual;
-      } catch(e) {
-        // Erro de rede — deixa passar sem bloquear o cadastro
+    var btn1 = document.querySelector('#reg-step1 .btn-primary');
+    if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
+    try {
+      // Busca pelo campo referralCode (código aleatório), não pelo username
+      var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
+      if(snap.empty) {
+        errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
+        if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
+        return;
       }
-      if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
+      // Código válido — armazena para usar no cadastro
+      window._pendingRefCode = refManual;
+    } catch(e) {
+      // Erro de rede — deixa passar sem bloquear o cadastro
     }
+    if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
   }
 
   regShowStep(2);
@@ -7337,19 +7326,14 @@ window.regSubmitPayment = async function() {
     var name         = (document.getElementById('reg-name').value||'').trim();
     var cref         = (document.getElementById('reg-cref').value||'').trim();
 
-    // Cria conta no Firestore — calcula dias de trial
+    // Cria conta no Firestore (trial de 7 dias durante processamento)
     var hash  = await _sha256(document.getElementById('reg-pass').value);
-    var _refCode = window._pendingRefCode || '';
-    var _trialDays = 7;
-    if(_refCode && _refCode.toUpperCase() !== 'DEBUGMODE') _trialDays += 7; // indicação = +7
-    if(_refCode.toUpperCase() === 'DEBUGMODE') _trialDays += 7;             // DEBUGMODE = +7
     _regNewId = 'mgr_'+Date.now();
     await _db.collection('managers').doc(_regNewId).set({
       username:user, passwordHash:hash, name, cref, crefDeclared:true,
       role:'comum', isMaster:false,
-      trialEndsAt:Date.now()+_trialDays*24*60*60*1000, subEndsAt:null,
-      blocked:false, createdAt:Date.now(),
-      referredBy: _refCode || null
+      trialEndsAt:Date.now()+7*24*60*60*1000, subEndsAt:null,
+      blocked:false, createdAt:Date.now()
     });
 
     // Processa pagamento
@@ -7375,8 +7359,6 @@ window.regSubmitPayment = async function() {
           subEndsAt: subEndsAt, trialEndsAt: null,
           lastPayment: { plan:_regSelectedPlan, amount:regGetAmount(), paymentId:String(result.id||''), status:result.status||'approved', date:Date.now() }
         });
-        // Bônus para quem indicou (fluxo ?ref=), exceto DEBUGMODE
-        if(_refCode && _refCode.toUpperCase() !== 'DEBUGMODE') await _applyReferralBonus(_refCode);
       } catch(fsErr){ console.error('activateSubscription reg error:', fsErr); }
       document.getElementById('reg-success').style.display = 'block';
       document.getElementById('reg-success-msg').textContent =
