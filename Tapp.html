@@ -7028,10 +7028,12 @@ window.inviteRegister = async function(){
       var invBySnap = await _db.collection('managers').where('username','==',invBy).get();
       if(!invBySnap.empty) invByRefCode = invBySnap.docs[0].data().referralCode || invBy;
     } catch(e) {}
+    // Se veio por indicação (invBy preenchido), já nasce com 14 dias (7 base + 7 de bônus)
+    var invTrialDays = invBy ? 14 : 7;
     await _db.collection('managers').doc(newId).set({
       username, passwordHash:hash, name: invName, role:'comum', isMaster:false,
       cref, crefDeclared:true,
-      trialEndsAt:Date.now()+7*24*60*60*1000, subEndsAt:null,
+      trialEndsAt:Date.now()+invTrialDays*24*60*60*1000, subEndsAt:null,
       blocked:false, createdAt:Date.now(), invitedBy:invBy, referredBy:invByRefCode
     });
     await _db.collection('invites').doc(window._invDocId).update({
@@ -7326,14 +7328,17 @@ window.regSubmitPayment = async function() {
     var name         = (document.getElementById('reg-name').value||'').trim();
     var cref         = (document.getElementById('reg-cref').value||'').trim();
 
-    // Cria conta no Firestore (trial de 7 dias durante processamento)
+    // Cria conta no Firestore (trial durante processamento — 14 dias se veio por indicação, 7 dias sem indicação)
     var hash  = await _sha256(document.getElementById('reg-pass').value);
+    var _refCode = window._pendingRefCode || '';
+    var _trialDays = _refCode ? 14 : 7;
     _regNewId = 'mgr_'+Date.now();
     await _db.collection('managers').doc(_regNewId).set({
       username:user, passwordHash:hash, name, cref, crefDeclared:true,
       role:'comum', isMaster:false,
-      trialEndsAt:Date.now()+7*24*60*60*1000, subEndsAt:null,
-      blocked:false, createdAt:Date.now()
+      trialEndsAt:Date.now()+_trialDays*24*60*60*1000, subEndsAt:null,
+      blocked:false, createdAt:Date.now(),
+      referredBy: _refCode || null
     });
 
     // Processa pagamento
@@ -7359,6 +7364,8 @@ window.regSubmitPayment = async function() {
           subEndsAt: subEndsAt, trialEndsAt: null,
           lastPayment: { plan:_regSelectedPlan, amount:regGetAmount(), paymentId:String(result.id||''), status:result.status||'approved', date:Date.now() }
         });
+        // Bônus para quem indicou (fluxo ?ref=)
+        if(_refCode) await _applyReferralBonus(_refCode);
       } catch(fsErr){ console.error('activateSubscription reg error:', fsErr); }
       document.getElementById('reg-success').style.display = 'block';
       document.getElementById('reg-success-msg').textContent =
