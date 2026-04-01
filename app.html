@@ -5554,6 +5554,16 @@
       document.querySelectorAll('.sidebar-item-gestores, .mobile-nav-item-gestores').forEach(function (el) {
         el.classList.toggle('hidden', !show);
       });
+      // show/hide Report tab (só testadores)
+      var showReport = !!u.isTester;
+      document.querySelectorAll('.sidebar-item-report, .mobile-nav-item-report').forEach(function (el) {
+        el.classList.toggle('hidden', !showReport);
+      });
+      // show/hide CEO tabs
+      var showCeo = u.role === 'ceo';
+      document.querySelectorAll('.sidebar-item-ceo').forEach(function (el) {
+        el.classList.toggle('hidden', !showCeo);
+      });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
