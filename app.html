@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
       <div id="reg-processing" style="display:none;text-align:center;padding:20px 0;">
         <div class="spinner" style="margin:0 auto 16px;"></div>
-        <p style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
+        <p style="font-weight:700;font-size:.95rem;color:var(--text);">Processando pagamento...</p>
         <p style="font-size:.82rem;color:var(--text3);margin-top:6px;">Aguarde, isso leva alguns segundos.</p>
       </div>
 
@@ -7224,22 +7224,27 @@ window.regStep1Next = async function() {
   var refCodeWrap = document.getElementById('reg-ref-code-wrap');
   var refManual = refInput ? refInput.value.trim() : '';
   if(refManual && !window._pendingRefCode && refCodeWrap && refCodeWrap.style.display !== 'none') {
-    var btn1 = document.querySelector('#reg-step1 .btn-primary');
-    if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
-    try {
-      // Busca pelo campo referralCode (código aleatório), não pelo username
-      var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
-      if(snap.empty) {
-        errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
-        if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
-        return;
-      }
-      // Código válido — armazena para usar no cadastro
+    // DEBUGMODE é sempre válido — não precisa buscar no banco
+    if(refManual.toUpperCase() === 'DEBUGMODE') {
       window._pendingRefCode = refManual;
-    } catch(e) {
-      // Erro de rede — deixa passar sem bloquear o cadastro
+    } else {
+      var btn1 = document.querySelector('#reg-step1 .btn-primary');
+      if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
+      try {
+        // Busca pelo campo referralCode (código aleatório), não pelo username
+        var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
+        if(snap.empty) {
+          errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
+          if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
+          return;
+        }
+        // Código válido — armazena para usar no cadastro
+        window._pendingRefCode = refManual;
+      } catch(e) {
+        // Erro de rede — deixa passar sem bloquear o cadastro
+      }
+      if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
     }
-    if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
   }
 
   regShowStep(2);
@@ -7841,6 +7846,11 @@ window.regStep2Next = async function() {
                || (document.getElementById('reg-ref-code') ? document.getElementById('reg-ref-code').value.trim() : '')
                || '';
 
+    // Calcula dias de trial: 7 base + 7 se usou código de indicação + 7 se usou DEBUGMODE
+    var trialDays = 7;
+    if (refCode && refCode.toUpperCase() !== 'DEBUGMODE') trialDays += 7;
+    if (refCode.toUpperCase() === 'DEBUGMODE') trialDays += 7;
+
     // Salva no Firestore
     try {
       await _db.collection('managers').doc(_regNewId).set({
@@ -7848,7 +7858,7 @@ window.regStep2Next = async function() {
         email: email || authEmail,
         authUid: uid,
         role: 'comum', isMaster: false,
-        trialEndsAt: Date.now() + 7 * 24 * 60 * 60 * 1000, subEndsAt: null,
+        trialEndsAt: Date.now() + trialDays * 24 * 60 * 60 * 1000, subEndsAt: null,
         blocked: false, createdAt: Date.now(),
         referredBy: refCode
       });
