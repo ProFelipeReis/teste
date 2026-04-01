@@ -5671,7 +5671,7 @@
 
         <div id="sub-step-processing" style="display:none;text-align:center;padding:20px 0;">
           <div class="spinner" style="margin:0 auto 16px;"></div>
-          <p id="reg-processing-title" style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
+          <p style="font-weight:700;font-size:.95rem;color:var(--text);">Processando pagamento...</p>
           <p style="font-size:.82rem;color:var(--text3);margin-top:6px;">Aguarde, isso leva alguns segundos.</p>
         </div>
 
@@ -6024,7 +6024,7 @@
 
         <div id="reg-processing" style="display:none;text-align:center;padding:20px 0;">
           <div class="spinner" style="margin:0 auto 16px;"></div>
-          <p style="font-weight:700;font-size:.95rem;color:var(--text);">Processando pagamento...</p>
+          <p id="reg-processing-title" style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
           <p style="font-size:.82rem;color:var(--text3);margin-top:6px;">Aguarde, isso leva alguns segundos.</p>
         </div>
 
@@ -12022,7 +12022,7 @@
     };
 
     function regShowStep(n) {
-      [1, 2].forEach(function (i) {
+      [1, 2, 3].forEach(function (i) {
         var s = document.getElementById('reg-step' + i);
         if (s) s.style.display = i === n ? 'block' : 'none';
         var dot = document.getElementById('reg-dot-' + i);
