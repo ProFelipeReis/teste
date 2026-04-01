@@ -5671,7 +5671,7 @@
 
         <div id="sub-step-processing" style="display:none;text-align:center;padding:20px 0;">
           <div class="spinner" style="margin:0 auto 16px;"></div>
-          <p style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
+          <p id="reg-processing-title" style="font-weight:700;font-size:.95rem;color:var(--text);">Criando sua conta...</p>
           <p style="font-size:.82rem;color:var(--text3);margin-top:6px;">Aguarde, isso leva alguns segundos.</p>
         </div>
 
@@ -6749,6 +6749,34 @@
   <div id="mobile-sidebar"></div>
 
   <!-- MODAL: INDICAÇÃO DE AMIGO -->
+  <div id="modal-debugmode" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Ambiente de Desenvolvimento</h3>
+        <button class="close-btn" onclick="closeModal('modal-debugmode')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;padding:8px 0 20px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div style="font-family:var(--head);font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:8px;">Voc&#xea; est&#xe1; no modo de teste</div>
+          <div style="font-size:.82rem;color:var(--text2);line-height:1.65;margin-bottom:20px;">
+            Bem-vindo! Voc&#xea; utilizou o c&#xf3;digo especial <strong style="color:var(--text);font-family:var(--head);letter-spacing:.04em;">DEBUGMODE</strong> e ganhou <strong>60 dias gr&#xe1;tis</strong> para explorar o Trainly &#xe0; vontade.<br><br>
+            Este app est&#xe1; em <strong>est&#xe1;gio de desenvolvimento ativo</strong>. Voc&#xea; pode encontrar instabilidades ou funcionalidades incompletas &#x2014; seu feedback &#xe9; essencial para a evolu&#xe7;&#xe3;o da plataforma.
+          </div>
+          <div style="background:var(--accent-dim);border:1px solid var(--accent-soft);border-radius:var(--r);padding:14px 16px;text-align:left;margin-bottom:20px;">
+            <div style="font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:6px;">&#x1F44B; A equipe agradece!</div>
+            <div style="font-size:.78rem;color:var(--text2);line-height:1.6;">Obrigado por fazer parte desta fase. Qualquer bug, sugest&#xe3;o ou elogio &#xe9; bem-vindo. Voc&#xea; est&#xe1; ajudando a construir algo especial.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" style="width:100%;" onclick="closeModal('modal-debugmode')">Entendido, vamos l&#xe1;! &#x1F680;</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-referral" class="modal-overlay hidden">
     <div class="modal modal-sm">
       <div class="modal-header">
@@ -7855,11 +7883,19 @@
             if (!sub.ok) { showSubscriptionWall(); return; }
             if (sub.type === 'trial') {
               showTrialBanner(sub.daysLeft);
-              // Mostra modal de assinatura 3s após entrar (só uma vez — flag no Firestore)
-              if (!mgr.trialModalShown) {
+              // Modal especial DEBUGMODE (só na primeira vez)
+              var isDebugUser = (mgr.referredBy || '').toUpperCase() === '' && sub.daysLeft > 50;
+              // Detecta via flag dedicada
+              if (!mgr.debugModalShown && mgr.trialEndsAt && (mgr.trialEndsAt - Date.now()) > 55 * 24 * 60 * 60 * 1000) {
+                setTimeout(function () {
+                  var docId = snap.docs[0].id;
+                  openModal('modal-debugmode');
+                  try { _updateDoc(_doc(_db, 'managers', docId), { debugModalShown: true }); } catch (e) { }
+                }, 1200);
+              } else if (!mgr.trialModalShown) {
+                // Mostra modal de assinatura 3s após entrar (só uma vez — flag no Firestore)
                 setTimeout(function () {
                   if (window.showTrialWelcomeModal) showTrialWelcomeModal(sub.daysLeft);
-                  // Marca no Firestore que já foi mostrado
                   try {
                     var docId = snap.docs[0].id;
                     _updateDoc(_doc(_db, 'managers', docId), { trialModalShown: true });
@@ -12131,6 +12167,7 @@
 
       regShowStep('processing');
       document.getElementById('reg-processing').style.display = 'block';
+      var _rpt = document.getElementById('reg-processing-title'); if (_rpt) _rpt.textContent = 'Processando pagamento...';
       document.getElementById('reg-step1').style.display = 'none';
       document.getElementById('reg-step2').style.display = 'none';
       document.getElementById('reg-step3').style.display = 'none';
@@ -12612,6 +12649,7 @@
         var el = document.getElementById('reg-step' + i); if (el) el.style.display = 'none';
       });
       document.getElementById('reg-processing').style.display = 'block';
+      var _rpt = document.getElementById('reg-processing-title'); if (_rpt) _rpt.textContent = 'Criando sua conta...';
 
       // Helper para mostrar erro e voltar ao step 2
       function showErr(msg) {
