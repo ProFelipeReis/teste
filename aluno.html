@@ -3646,7 +3646,7 @@
     let _activeWorkout = null; // { planId, wi, planTitle, workoutTitle, startTimestamp }
     let _timerInterval = null;
 
-    // ── Check state (persistido no localStorage por aluno) ──
+    // ── Check state (persistido no localStorage por aluno + data) ──
     const checkState = {};
 
     function _checkStateKey() {
@@ -3655,7 +3655,9 @@
     }
 
     function _saveCheckState() {
-      try { localStorage.setItem(_checkStateKey(), JSON.stringify(checkState)); } catch (e) { }
+      try {
+        localStorage.setItem(_checkStateKey(), JSON.stringify({ date: _todayStr(), checks: checkState }));
+      } catch (e) { }
     }
 
     function _loadCheckState() {
@@ -3663,7 +3665,12 @@
         const raw = localStorage.getItem(_checkStateKey());
         if (raw) {
           const saved = JSON.parse(raw);
-          Object.assign(checkState, saved);
+          // Se os checks foram salvos num dia diferente, descarta — novo dia, novo treino
+          if (saved.date && saved.date === _todayStr()) {
+            Object.assign(checkState, saved.checks || {});
+          } else {
+            localStorage.removeItem(_checkStateKey());
+          }
         }
       } catch (e) { }
     }
