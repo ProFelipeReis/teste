@@ -1010,9 +1010,9 @@
     .terms-footer { padding:14px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; flex-shrink:0; }
 
     /* ══ REGISTER SCREEN ══ */
-    #screen-register { display:none; position:fixed; inset:0; z-index:6000; background:#f7f7f5; align-items:center; justify-content:center; padding:24px; overflow-y:auto; }
+    #screen-register { display:none; position:fixed; inset:0; z-index:6000; background:#f7f7f5; align-items:flex-start; justify-content:center; padding:24px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
     #screen-register.on { display:flex; }
-    .reg-card { background:#fff; border:1px solid #e4e4e0; border-radius:24px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.1); position:relative; }
+    .reg-card { background:#fff; border:1px solid #e4e4e0; border-radius:24px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.1); position:relative; margin:auto; }
     .reg-head { background:#111110; padding:24px 32px 20px; text-align:center; }
     .reg-head img { height:28px; margin-bottom:12px; }
     .reg-head h2 { color:#fff; font-family:var(--head); font-size:1.1rem; font-weight:800; margin-bottom:4px; }
@@ -7224,27 +7224,22 @@ window.regStep1Next = async function() {
   var refCodeWrap = document.getElementById('reg-ref-code-wrap');
   var refManual = refInput ? refInput.value.trim() : '';
   if(refManual && !window._pendingRefCode && refCodeWrap && refCodeWrap.style.display !== 'none') {
-    // DEBUGMODE é sempre válido — não precisa buscar no banco
-    if(refManual.toUpperCase() === 'DEBUGMODE') {
-      window._pendingRefCode = refManual;
-    } else {
-      var btn1 = document.querySelector('#reg-step1 .btn-primary');
-      if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
-      try {
-        // Busca pelo campo referralCode (código aleatório), não pelo username
-        var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
-        if(snap.empty) {
-          errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
-          if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
-          return;
-        }
-        // Código válido — armazena para usar no cadastro
-        window._pendingRefCode = refManual;
-      } catch(e) {
-        // Erro de rede — deixa passar sem bloquear o cadastro
+    var btn1 = document.querySelector('#reg-step1 .btn-primary');
+    if(btn1) { btn1.classList.add('btn-loading'); btn1.textContent = 'Verificando...'; }
+    try {
+      // Busca pelo campo referralCode (código aleatório), não pelo username
+      var snap = await _db.collection('managers').where('referralCode','==',refManual).get();
+      if(snap.empty) {
+        errEl.textContent = 'Código de indicação inválido. Verifique com quem te indicou.';
+        if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
+        return;
       }
-      if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
+      // Código válido — armazena para usar no cadastro
+      window._pendingRefCode = refManual;
+    } catch(e) {
+      // Erro de rede — deixa passar sem bloquear o cadastro
     }
+    if(btn1) { btn1.classList.remove('btn-loading'); btn1.textContent = 'Continuar →'; }
   }
 
   regShowStep(2);
@@ -7846,11 +7841,6 @@ window.regStep2Next = async function() {
                || (document.getElementById('reg-ref-code') ? document.getElementById('reg-ref-code').value.trim() : '')
                || '';
 
-    // Calcula dias de trial: 7 base + 7 se usou código de indicação + 7 se usou DEBUGMODE
-    var trialDays = 7;
-    if (refCode && refCode.toUpperCase() !== 'DEBUGMODE') trialDays += 7;
-    if (refCode.toUpperCase() === 'DEBUGMODE') trialDays += 7;
-
     // Salva no Firestore
     try {
       await _db.collection('managers').doc(_regNewId).set({
@@ -7858,7 +7848,7 @@ window.regStep2Next = async function() {
         email: email || authEmail,
         authUid: uid,
         role: 'comum', isMaster: false,
-        trialEndsAt: Date.now() + trialDays * 24 * 60 * 60 * 1000, subEndsAt: null,
+        trialEndsAt: Date.now() + 7 * 24 * 60 * 60 * 1000, subEndsAt: null,
         blocked: false, createdAt: Date.now(),
         referredBy: refCode
       });
