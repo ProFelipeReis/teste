@@ -3,9 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <meta name="theme-color" content="#111110"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="icon" type="image/png" href="https://i.imgur.com/9DDa1Th.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="https://i.imgur.com/9DDa1Th.png" />
@@ -58,6 +57,8 @@
       scroll-behavior: smooth;
       touch-action: pan-x pan-y;
       overflow-x: hidden;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
     }
 
     * {
@@ -65,11 +66,13 @@
     }
 
     body {
-      overflow-x: hidden;
+      overflow: hidden;
       font-family: var(--body);
-      background: var(--bg);
+      background: #111110;
       color: var(--text);
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
+      overscroll-behavior: none;
     }
 
     button {
@@ -388,9 +391,10 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      min-height: 100vh;
-      padding: 80px 24px 24px;
-      background: #f0f0ef;
+      height: 100vh;
+      height: 100dvh;
+      padding: calc(80px + env(safe-area-inset-top)) 24px 24px;
+      background: #111110;
       position: relative;
       overflow: hidden;
     }
@@ -520,7 +524,10 @@
     #screen-app {
       display: none;
       flex-direction: column;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
     }
 
     /* Topbar — largura total no topo */
@@ -534,7 +541,6 @@
       display: flex;
       flex-direction: column;
       width: 100%;
-      padding-top: env(safe-area-inset-top);
     }
 
     .topbar-main {
@@ -3555,36 +3561,6 @@
     // Inclui o código do aluno na chave para que timers de alunos diferentes
     // nunca se misturem no mesmo navegador.
     const LS_TIMER_PREFIX = 'trainly_timer_';
-    const LS_CHECKS_PREFIX = 'trainly_checks_';
-
-    // Chave do localStorage para os checks do dia atual deste aluno
-    function _checksKey() {
-      return `${LS_CHECKS_PREFIX}${_timerStudentCode()}_${_todayStr()}`;
-    }
-
-    // Persiste checkState no localStorage e remove chaves de dias anteriores
-    function _saveChecks() {
-      try {
-        localStorage.setItem(_checksKey(), JSON.stringify(checkState));
-        var myPrefix = `${LS_CHECKS_PREFIX}${_timerStudentCode()}_`;
-        var todayKey = _checksKey();
-        var toRemove = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.startsWith(myPrefix) && k !== todayKey) toRemove.push(k);
-        }
-        toRemove.forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
-      } catch(e) {}
-    }
-
-    // Restaura checks salvos do dia atual para o checkState em memória
-    function _loadChecks() {
-      try {
-        var raw = localStorage.getItem(_checksKey());
-        if (!raw) return;
-        Object.assign(checkState, JSON.parse(raw));
-      } catch(e) {}
-    }
 
     // Retorna o código do aluno atual (em minúsculas, sem espaços)
     function _timerStudentCode() {
@@ -3670,8 +3646,27 @@
     let _activeWorkout = null; // { planId, wi, planTitle, workoutTitle, startTimestamp }
     let _timerInterval = null;
 
-    // ── Check state (in-memory) ──
+    // ── Check state (persistido no localStorage por aluno) ──
     const checkState = {};
+
+    function _checkStateKey() {
+      const sid = (_currentStudent && _currentStudent.id) ? _currentStudent.id : 'unknown';
+      return `trainly_checks_${sid}`;
+    }
+
+    function _saveCheckState() {
+      try { localStorage.setItem(_checkStateKey(), JSON.stringify(checkState)); } catch (e) { }
+    }
+
+    function _loadCheckState() {
+      try {
+        const raw = localStorage.getItem(_checkStateKey());
+        if (raw) {
+          const saved = JSON.parse(raw);
+          Object.assign(checkState, saved);
+        }
+      } catch (e) { }
+    }
 
     // ── Timer display ──
     function formatTime(ms) {
@@ -4055,9 +4050,9 @@
 
     function showApp(student) {
       _currentStudent = student;
-      _loadChecks(); // Restaura checks do dia salvos no localStorage
+      _loadCheckState();
       document.getElementById('screen-login').style.display = 'none';
-      document.getElementById('screen-app').style.cssText = 'display:flex;flex-direction:column;';
+      document.getElementById('screen-app').style.cssText = 'display:flex;flex-direction:column;background:#f7f7f5;';
       document.getElementById('student-pill').textContent = student.name;
       const sidebarPill = document.getElementById('student-pill-sidebar');
       if (sidebarPill) sidebarPill.textContent = student.name;
@@ -4579,6 +4574,34 @@
           }
         }
 
+        // After render: restore check state from localStorage
+        for (const key of Object.keys(checkState)) {
+          if (!checkState[key]) continue;
+          const row = document.getElementById('exrow_' + key);
+          if (!row) continue;
+          row.classList.add('checked');
+          // Atualiza barra de progresso usando data attributes do botão de check
+          const btn = row.querySelector('[data-plan]');
+          if (btn) {
+            const planId = btn.dataset.plan;
+            const wi = parseInt(btn.dataset.wi);
+            const total = parseInt(btn.dataset.total);
+            const progressId = btn.dataset.prog;
+            if (total > 0 && progressId) {
+              const pw = document.getElementById(progressId);
+              if (pw) {
+                let done = 0;
+                for (let i = 0; i < total; i++) { if (checkState[planId + '_' + wi + '_' + i]) done++; }
+                const pct = Math.round((done / total) * 100);
+                const fill = pw.querySelector('.progress-bar-fill');
+                const label = pw.querySelector('.progress-label');
+                if (fill) fill.style.width = pct + '%';
+                if (label) label.textContent = done + '/' + total + ' exercícios';
+              }
+            }
+          }
+        }
+
         // After render: restore lock state for active timers
         if (_activeWorkout) {
           refreshWorkoutLockState(_activeWorkout.planId, _activeWorkout.wi, true);
@@ -4633,6 +4656,7 @@
       const row = document.getElementById(`exrow_${planId}_${wi}_${ei}`);
       if (checkState[key]) row.classList.add('checked');
       else row.classList.remove('checked');
+      _saveCheckState();
       // progress
       let done = 0;
       for (let i = 0; i < total; i++) { if (checkState[`${planId}_${wi}_${i}`]) done++; }
@@ -4642,7 +4666,6 @@
         pw.querySelector('.progress-bar-fill').style.width = pct + '%';
         pw.querySelector('.progress-label').textContent = `${done}/${total} exercícios`;
       }
-      _saveChecks(); // Persiste no localStorage
     };
 
     window.handleCheckBtn = function (btn) {
@@ -4831,23 +4854,6 @@
           acc.classList.add('open');
           acc.querySelector('.workout-days-row').style.display = 'flex';
           acc.querySelector('.exercises-body').style.display = 'flex';
-        }
-
-        // Restaura visualmente os checks salvos para este treino
-        for (let ei2 = 0; ei2 < total; ei2++) {
-          if (checkState[`${p.id}_${wi}_${ei2}`]) {
-            const savedRow = acc.querySelector(`#exrow_${p.id}_${wi}_${ei2}`);
-            if (savedRow) savedRow.classList.add('checked');
-          }
-        }
-        // Restaura barra de progresso
-        const pwRestore = acc.querySelector(`#${progressId}`);
-        if (pwRestore) {
-          let doneR = 0;
-          for (let ei2 = 0; ei2 < total; ei2++) { if (checkState[`${p.id}_${wi}_${ei2}`]) doneR++; }
-          const pctR = total > 0 ? Math.round((doneR / total) * 100) : 0;
-          pwRestore.querySelector('.progress-bar-fill').style.width = pctR + '%';
-          pwRestore.querySelector('.progress-label').textContent = `${doneR}/${total} exercícios`;
         }
 
         workoutsWrap.appendChild(acc);
