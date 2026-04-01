@@ -5537,11 +5537,11 @@
     }
 
     function _applyUserUI() {
+      if (window._applyUserUI) { window._applyUserUI(); return; }
+      // fallback — executa direto se window._applyUserUI ainda não foi definido
       var u = window.CURRENT_USER || {};
-      // topbar pill (oculto, mantido para compatibilidade)
       var pill = document.getElementById('topbar-user-pill');
       if (pill) pill.textContent = u.displayName || u.username || 'gestor';
-      // saudação no dashboard
       var greetingEl = document.getElementById('dashboard-greeting');
       if (greetingEl) {
         var _h = new Date().getHours();
@@ -5549,22 +5549,17 @@
         var _fn = ((u.displayName || u.username || '').split(' ')[0]) || 'você';
         greetingEl.textContent = _p + ', ' + _fn + ' 👋';
       }
-      // show/hide Gestores tab
-      var show = !!u.isMaster;
-      document.querySelectorAll('.sidebar-item-gestores, .mobile-nav-item-gestores').forEach(function (el) {
-        el.classList.toggle('hidden', !show);
+      document.querySelectorAll('.sidebar-item-gestores,.mobile-nav-item-gestores').forEach(function (el) {
+        el.classList.toggle('hidden', !(u.role === 'master' || u.role === 'ceo' || !!u.isMaster));
       });
-      // show/hide Report tab (só testadores)
-      var showReport = !!u.isTester;
-      document.querySelectorAll('.sidebar-item-report, .mobile-nav-item-report').forEach(function (el) {
-        el.classList.toggle('hidden', !showReport);
+      document.querySelectorAll('.sidebar-item-report,.mobile-nav-item-report').forEach(function (el) {
+        el.classList.toggle('hidden', !u.isTester);
       });
-      // show/hide CEO tabs
-      var showCeo = u.role === 'ceo';
       document.querySelectorAll('.sidebar-item-ceo').forEach(function (el) {
-        el.classList.toggle('hidden', !showCeo);
+        el.classList.toggle('hidden', u.role !== 'ceo');
       });
     }
+    window._applyUserUIEarly = _applyUserUI;
 
     document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('login-form').addEventListener('keydown', function (e) {
@@ -6873,8 +6868,8 @@
           </div>
           <div style="font-family:var(--head);font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:8px;">Voc&#xea; &#xe9; um testador oficial!</div>
           <div style="font-size:.82rem;color:var(--text2);line-height:1.65;margin-bottom:20px;">
-            Voc&#xea; foi selecionado para fazer parte de um grupo especial de usu&#xe1;rios que testam o Trainly antes de todos.<br><br>
-            Sua miss&#xe3;o &#xe9; usar a plataforma normalmente e nos contar o que encontrar — bugs, melhorias, incomod&#xe2;ncias. Tudo conta!
+            Voc&#xea; foi selecionado pela equipe de desenvolvimento do Trainly para fazer parte de um grupo especial de usu&#xe1;rios que testam a plataforma antes de todos.<br><br>
+            Sua miss&#xe3;o &#xe9; usar a plataforma normalmente e nos contar o que encontrar — bugs, melhorias, incomod&#xe2;ncias.
           </div>
           <div style="background:var(--accent-dim);border:1px solid var(--accent-soft);border-radius:var(--r);padding:14px 16px;text-align:left;margin-bottom:20px;">
             <div style="font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:6px;">&#x1F44B; A equipe Trainly agradece!</div>
@@ -8003,7 +7998,7 @@
       document.getElementById('screen-login').style.display = 'none';
       document.getElementById('screen-sub-wall').style.display = 'none';
       document.getElementById('screen-dashboard').style.cssText = 'display:flex;flex-direction:column;';
-      _applyUserUI();
+      (window._applyUserUI || window._applyUserUIEarly || function(){})();
       loadStudents();
       startNotifPolling();
       (function waitChat() { if (window.startChatBadgePolling) { startChatBadgePolling(); } else { setTimeout(waitChat, 200); } })();
@@ -8068,7 +8063,7 @@
             }
           }
           try { localStorage.setItem(LS_GESTOR, JSON.stringify(window.CURRENT_USER)); } catch (e) { }
-          _applyUserUI();
+          (window._applyUserUI || window._applyUserUIEarly || function(){})();
         }
       }).catch(function () { });
     };
@@ -10370,7 +10365,7 @@
         window.CURRENT_USER.phone = finalPhone;
         try { localStorage.setItem(LS_GESTOR, JSON.stringify(window.CURRENT_USER)); } catch (e) { }
 
-        _applyUserUI();
+        (window._applyUserUI || window._applyUserUIEarly || function(){})();
         closeModal('modal-profile');
         toast('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg> Perfil atualizado!');
       } catch (e) {
@@ -12914,6 +12909,7 @@
           role: role,
           isMaster: role === 'master' || role === 'ceo',
           isCeo: role === 'ceo',
+          isTester: !!mgr.isTester,
           displayName: mgr.name || user,
           phone: mgr.phone || '',
           subStatus: subStatus,
