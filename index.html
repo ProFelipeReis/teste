@@ -800,10 +800,18 @@
       </div>
       <div class="main-content">
         <div id="tab-dashboard" class="tab-panel active">
-          <div class="page-header">
-            <div class="page-title" id="dashboard-greeting">Dashboard</div>
-            <div style="font-size:.72rem;color:var(--text3);font-weight:600;" id="dash-last-updated"></div>
+          <div class="page-header" style="margin-bottom:20px;">
+            <div>
+              <div class="page-title" id="dashboard-greeting">Dashboard</div>
+              <div style="font-size:.72rem;color:var(--text3);font-weight:600;margin-top:2px;" id="dash-last-updated"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddStudentModal()" style="flex-shrink:0;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo aluno
+            </button>
           </div>
+
+          <!-- Trial card -->
           <div class="trial-dash-card" id="trial-dash-card">
             <div class="trial-dash-left">
               <div class="trial-days-circle">
@@ -812,16 +820,16 @@
               </div>
               <div class="trial-dash-info">
                 <h4>Período de teste ativo</h4>
-                <p id="trial-dash-desc">Você tem 7 dias restantes.<br />Assine para não perder o acesso.</p>
+                <p id="trial-dash-desc">Você tem 7 dias restantes.<br/>Assine para não perder o acesso.</p>
               </div>
             </div>
-            <button class="trial-dash-btn" onclick="showSubscriptionWall()"><svg width="14" height="14"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" style="vertical-align:middle">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg> Assinar agora</button>
+            <button class="trial-dash-btn" onclick="showSubscriptionWall()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Assinar agora
+            </button>
           </div>
-          <!-- ── KPIs Principais ── -->
+
+          <!-- ── KPIs ── -->
           <div class="dash-section-title">Visão geral</div>
           <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:20px;">
             <div class="stat-card">
@@ -863,14 +871,67 @@
               </div>
               <div class="stat-num blue" id="stat-taxa">—%</div>
               <div class="stat-lbl">Taxa de renovação</div>
-              <div class="stat-sub">
-                <span id="stat-taxa-sub">Planos ativos / total</span>
+              <div class="stat-sub"><span id="stat-taxa-sub">Planos ativos / total</span></div>
+            </div>
+          </div>
+
+          <!-- ── Linha principal: Gráfico + Atividade recente ── -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" class="dash-main-row">
+
+            <!-- Gráfico de frequência semanal -->
+            <div class="dash-chart-card">
+              <div class="dash-chart-header">
+                <div class="dash-chart-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Frequência semanal
+                </div>
+                <div class="dash-chart-sub">treinos realizados</div>
+              </div>
+              <div class="dash-bar-chart" id="dash-freq-chart">
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:45%"></div><div class="dash-bar-lbl">Seg</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:72%"></div><div class="dash-bar-lbl">Ter</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:55%"></div><div class="dash-bar-lbl">Qua</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:88%"></div><div class="dash-bar-lbl">Qui</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:60%"></div><div class="dash-bar-lbl">Sex</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:30%"></div><div class="dash-bar-lbl">Sáb</div></div>
+                <div class="dash-bar-wrap"><div class="dash-bar" style="height:15%"></div><div class="dash-bar-lbl">Dom</div></div>
+              </div>
+            </div>
+
+            <!-- Distribuição de status dos planos (donut visual) -->
+            <div class="dash-chart-card">
+              <div class="dash-chart-header">
+                <div class="dash-chart-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  Status dos planos
+                </div>
+                <div class="dash-chart-sub">distribuição atual</div>
+              </div>
+              <div class="dash-donut-wrap">
+                <svg class="dash-donut-svg" viewBox="0 0 80 80" id="dash-donut-svg">
+                  <circle cx="40" cy="40" r="28" fill="none" stroke="var(--border)" stroke-width="12"/>
+                  <circle cx="40" cy="40" r="28" fill="none" stroke="var(--green)" stroke-width="12"
+                    stroke-dasharray="0 175.93" stroke-linecap="round" id="donut-ativos"
+                    transform="rotate(-90 40 40)" style="transition:stroke-dasharray .8s cubic-bezier(.4,0,.2,1)"/>
+                  <circle cx="40" cy="40" r="28" fill="none" stroke="var(--red)" stroke-width="12"
+                    stroke-dasharray="0 175.93" stroke-linecap="round" id="donut-vencidos"
+                    transform="rotate(-90 40 40)" style="transition:stroke-dasharray .8s cubic-bezier(.4,0,.2,1)"/>
+                </svg>
+                <div class="dash-donut-center">
+                  <span class="dash-donut-pct" id="donut-pct">—</span>
+                  <span class="dash-donut-lbl">ativos</span>
+                </div>
+              </div>
+              <div class="dash-donut-legend">
+                <div class="dash-legend-item"><span class="dash-legend-dot green"></span><span id="donut-leg-ativos">— ativos</span></div>
+                <div class="dash-legend-item"><span class="dash-legend-dot red"></span><span id="donut-leg-vencidos">— vencidos</span></div>
               </div>
             </div>
           </div>
+
           <!-- ── Novos Alunos ── -->
           <div class="dash-section-title">Novos alunos</div>
-          <div class="dash-new-row">
+          <div class="dash-new-row" style="margin-bottom:20px;">
             <div class="dash-new-card">
               <div class="dash-new-card-header">
                 <div class="dash-new-card-title">
@@ -915,62 +976,93 @@
               </div>
             </div>
           </div>
-          <!-- ── Últimos alunos cadastrados ── -->
-          <div class="dash-section-title">Últimos cadastros</div>
-          <div class="dash-recent-card" id="dash-recent-card">
-            <div class="dash-recent-head">
-              <div class="dash-recent-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Alunos recentes
+
+          <!-- ── Últimos cadastros + Ações rápidas lado a lado ── -->
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:20px;align-items:start;" class="dash-bottom-row">
+
+            <!-- Últimos alunos -->
+            <div class="dash-recent-card" id="dash-recent-card">
+              <div class="dash-recent-head">
+                <div class="dash-recent-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  Últimos cadastros
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="goToAlunos()">Ver todos →</button>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="goToAlunos()">Ver todos →</button>
-            </div>
-            <div class="dash-recent-list" id="dash-recent-list">
-              <div class="dash-empty-state">Carregando...</div>
-            </div>
-          </div>
-          <!-- ── Ações rápidas ── -->
-          <div class="quick-card" style="margin-bottom:20px;">
-            <h3>Ações rápidas</h3>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-ghost" onclick="goToAlunos()"><svg width="14" height="14" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  style="vertical-align:middle">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg> Ver alunos</button>
-              <button class="btn btn-primary" onclick="openAddStudentModal()">+ Novo aluno</button>
-              <button class="btn btn-ghost" onclick="openCreateAlertModal()"
-                style="background:rgba(245,200,0,.1);border-color:rgba(245,200,0,.4);color:#8a6c00;font-weight:800;"><svg
-                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                  stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">
-                  <path d="M22 2L11 13" />
-                  <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                </svg> Criar Alerta</button>
-            </div>
-          </div>
-          <!-- Banner de indicação — visível para todos os gestores -->
-          <div class="referral-dash-banner" id="referral-dash-banner">
-            <div class="referral-dash-banner-left">
-              <div class="referral-dash-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  style="vertical-align:middle">
-                  <polyline points="20 12 20 22 4 22 4 12" />
-                  <rect x="2" y="7" width="20" height="5" />
-                  <line x1="12" y1="22" x2="12" y2="7" />
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                </svg></div>
-              <div class="referral-dash-text">
-                <strong>Indique um colega, ganhe 7 dias grátis</strong>
-                <span>Convide um profissional de educação física e, quando ele se cadastrar pelo seu link, você ganha
-                  <em>+7 dias</em> na sua mensalidade.</span>
+              <div class="dash-recent-list" id="dash-recent-list">
+                <div class="dash-empty-state">Carregando...</div>
               </div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="openReferralModal()"
-              style="white-space:nowrap;flex-shrink:0;">Gerar meu link →</button>
+
+            <!-- Painel lateral: Ações + Comunicação -->
+            <div style="display:flex;flex-direction:column;gap:14px;">
+
+              <!-- Ações rápidas -->
+              <div class="dash-side-card">
+                <div class="dash-side-card-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Ações rápidas
+                </div>
+                <div class="dash-quick-actions">
+                  <button class="dash-quick-btn" onclick="openAddStudentModal()">
+                    <div class="dash-quick-icon yellow">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a6c00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    </div>
+                    <span>Novo aluno</span>
+                  </button>
+                  <button class="dash-quick-btn" onclick="goToAlunos()">
+                    <div class="dash-quick-icon gray">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <span>Ver alunos</span>
+                  </button>
+                  <button class="dash-quick-btn" onclick="openCreateAlertModal()">
+                    <div class="dash-quick-icon accent">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a6c00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                    </div>
+                    <span>Enviar alerta</span>
+                  </button>
+                  <button class="dash-quick-btn" onclick="switchTab('tab-feedbacks', document.querySelector('[data-tab=tab-feedbacks]'))">
+                    <div class="dash-quick-icon green">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <span>Feedbacks</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card de comunicação -->
+              <div class="dash-side-card dash-comm-card">
+                <div class="dash-side-card-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+                  Comunicação
+                </div>
+                <p style="font-size:.76rem;color:var(--text3);margin-bottom:12px;line-height:1.55;">Envie alertas personalizados para seus alunos — eles aparecerão como pop-up no próximo acesso.</p>
+                <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:.82rem;" onclick="openCreateAlertModal()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                  Criar novo alerta
+                </button>
+                <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:.82rem;margin-top:8px;" onclick="switchTab('tab-chat', document.querySelector('[data-tab=tab-chat]'))">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  Abrir chat
+                </button>
+              </div>
+
+              <!-- Indicação -->
+              <div class="referral-dash-banner" id="referral-dash-banner" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                <div class="referral-dash-banner-left">
+                  <div class="referral-dash-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                  </div>
+                  <div class="referral-dash-text">
+                    <strong>Indique e ganhe 7 dias</strong>
+                    <span>Convide um colega e ganhe <em>+7 dias</em> grátis.</span>
+                  </div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="openReferralModal()" style="width:100%;justify-content:center;">Gerar meu link →</button>
+              </div>
+
+            </div>
           </div>
         </div>
         <div id="tab-alunos" class="tab-panel">
