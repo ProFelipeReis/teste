@@ -6190,3 +6190,57 @@ if (new URLSearchParams(window.location.search).get('invite')) { document.docume
         observer.observe(dashboard, { attributes: true, attributeFilter: ['style'] });
       });
     })();
+/* ═══════════════════════════════════
+   DONUT CHART — dashboard melhorada
+   ═══════════════════════════════════ */
+(function initDonutChart() {
+  function updateDonut() {
+    var ativos = 0, vencidos = 0;
+    var elA = document.getElementById('stat-planos');
+    var elV = document.getElementById('stat-expired');
+    if (elA) ativos = parseInt(elA.textContent) || 0;
+    if (elV) vencidos = parseInt(elV.textContent) || 0;
+    var total = ativos + vencidos;
+    if (total === 0) return;
+
+    var circ = 2 * Math.PI * 28; // 175.93
+    var pctAtivos = ativos / total;
+    var pctVencidos = vencidos / total;
+    var dasharrayAtivos = (circ * pctAtivos).toFixed(2) + ' ' + circ.toFixed(2);
+    var dasharrayVencidos = (circ * pctVencidos).toFixed(2) + ' ' + circ.toFixed(2);
+    var offsetVencidos = -(circ * pctAtivos);
+
+    var dA = document.getElementById('donut-ativos');
+    var dV = document.getElementById('donut-vencidos');
+    if (dA) dA.setAttribute('stroke-dasharray', dasharrayAtivos);
+    if (dV) {
+      dV.setAttribute('stroke-dasharray', dasharrayVencidos);
+      dV.setAttribute('stroke-dashoffset', offsetVencidos);
+    }
+
+    var pct = Math.round(pctAtivos * 100);
+    var elPct = document.getElementById('donut-pct');
+    if (elPct) elPct.textContent = pct + '%';
+
+    var elLA = document.getElementById('donut-leg-ativos');
+    var elLV = document.getElementById('donut-leg-vencidos');
+    if (elLA) elLA.textContent = ativos + ' ativo' + (ativos !== 1 ? 's' : '');
+    if (elLV) elLV.textContent = vencidos + ' vencido' + (vencidos !== 1 ? 's' : '');
+  }
+
+  // Observa mudanças nos elementos de stat para atualizar o donut
+  var observer = new MutationObserver(function() { setTimeout(updateDonut, 100); });
+  function watchStats() {
+    var elA = document.getElementById('stat-planos');
+    var elV = document.getElementById('stat-expired');
+    if (elA) observer.observe(elA, { childList: true, characterData: true, subtree: true });
+    if (elV) observer.observe(elV, { childList: true, characterData: true, subtree: true });
+    updateDonut();
+  }
+  // Aguarda DOM pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(watchStats, 1500); });
+  } else {
+    setTimeout(watchStats, 1500);
+  }
+})();
