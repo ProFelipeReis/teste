@@ -1,0 +1,32 @@
+/* ============================================================
+   shared/styles/tokens.css
+   Design tokens compartilhados entre /app e /aluno
+   ============================================================ */
+
+:root {
+  --bg: #f7f7f5;
+  --bg2: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f0f0ed;
+  --surface3: #e8e8e4;
+  --border: #e4e4e0;
+  --border2: #d0d0cb;
+  --accent: #f5c800;
+  --accent2: #e0b400;
+  --accent-dim: rgba(245, 200, 0, .10);
+  --accent-soft: rgba(245, 200, 0, .25);
+  --red: #e03e3e;
+  --red-dim: rgba(224, 62, 62, .08);
+  --green: #2e7d52;
+  --green-dim: rgba(46, 125, 82, .08);
+  --green-soft: rgba(46, 125, 82, .15);
+  --text: #111110;
+  --text2: #555550;
+  --text3: #999990;
+  --head: 'Nunito', sans-serif;
+  --body: 'Plus Jakarta Sans', sans-serif;
+  --r: 12px;
+  --r2: 16px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, .07), 0 1px 3px rgba(0, 0, 0, .05);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, .12), 0 2px 8px rgba(0, 0, 0, .07);
+}
