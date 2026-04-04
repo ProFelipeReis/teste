@@ -5736,3 +5736,201 @@
     .safari-tutorial-btn:active {
       opacity: .85;
     }
+/* ═══════════════════════════════════════════
+   DASHBOARD MELHORADA — novos componentes
+   ═══════════════════════════════════════════ */
+
+/* Linha principal desktop */
+.dash-main-row { grid-template-columns: 1fr 1fr; }
+@media(max-width:680px) {
+  .dash-main-row { grid-template-columns: 1fr !important; }
+  .dash-bottom-row { grid-template-columns: 1fr !important; }
+}
+
+/* Card de gráfico */
+.dash-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.dash-chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.dash-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.dash-chart-sub {
+  font-size: .68rem;
+  color: var(--text3);
+  font-weight: 600;
+}
+
+/* Barras do gráfico de frequência */
+.dash-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 90px;
+}
+.dash-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.dash-bar {
+  width: 100%;
+  background: var(--accent-dim);
+  border: 1.5px solid var(--accent-soft);
+  border-radius: 4px 4px 2px 2px;
+  transition: height .5s cubic-bezier(.4,0,.2,1);
+  min-height: 4px;
+}
+.dash-bar:hover {
+  background: rgba(245,200,0,.25);
+}
+.dash-bar-lbl {
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--text3);
+  text-align: center;
+}
+
+/* Donut chart */
+.dash-donut-wrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 12px;
+}
+.dash-donut-svg {
+  width: 90px;
+  height: 90px;
+  transform: rotate(-90deg);
+  /* already handled via transform attr */
+}
+.dash-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.dash-donut-pct {
+  font-family: var(--head);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.dash-donut-lbl {
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 2px;
+}
+.dash-donut-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+.dash-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text2);
+}
+.dash-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-legend-dot.green { background: var(--green); }
+.dash-legend-dot.red   { background: var(--red); }
+
+/* Card lateral */
+.dash-side-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.dash-side-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .75rem;
+  font-weight: 800;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 14px;
+}
+
+/* Ações rápidas grid */
+.dash-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.dash-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 8px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  font-family: var(--body);
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text2);
+  transition: all .15s;
+  text-align: center;
+}
+.dash-quick-btn:hover {
+  border-color: var(--border2);
+  background: var(--surface3);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,.07);
+}
+.dash-quick-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dash-quick-icon.yellow { background: var(--accent-dim); border: 1.5px solid var(--accent-soft); }
+.dash-quick-icon.gray   { background: var(--surface3); border: 1.5px solid var(--border2); }
+.dash-quick-icon.accent { background: rgba(245,200,0,.12); border: 1.5px solid rgba(245,200,0,.3); }
+.dash-quick-icon.green  { background: var(--green-dim); border: 1.5px solid var(--green-soft); }
+
+/* Card comunicação */
+.dash-comm-card {
+  border-left: 3px solid var(--accent);
+}
