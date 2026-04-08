@@ -455,7 +455,7 @@
       </form>
     </div>
     <div class="login-register-link">
-      <button onclick="window.location.href='https://trainly.online/app?register=1'">Novo aqui? <span>Criar conta</span></button>
+      <button onclick="window.location.href='https://profelipereis.github.io/teste/app?register=1'">Novo aqui? <span>Criar conta</span></button>
     </div>
   </div>
 </div>
@@ -510,10 +510,10 @@ function showLoginAluno(){
   try{
     // Sessão trainer salva? → vai direto pro dashboard
     var ts=localStorage.getItem('forge_gestor_session');
-    if(ts){try{var s=JSON.parse(ts);if(s&&s.username){window.location.replace('https://trainly.online/app');return;}}catch(e){}}
+    if(ts){try{var s=JSON.parse(ts);if(s&&s.username){window.location.replace('https://profelipereis.github.io/teste/app');return;}}catch(e){}}
     // Sessão aluno salva? → vai direto pro dashboard
     var as=localStorage.getItem('forge_student_session');
-    if(as){try{var a=JSON.parse(as);if(a&&a.id){window.location.replace('https://trainly.online/aluno');return;}}catch(e){}}
+    if(as){try{var a=JSON.parse(as);if(a&&a.id){window.location.replace('https://profelipereis.github.io/teste/aluno');return;}}catch(e){}}
     // Sem sessão → sempre tela de seleção (ignora ?role= e ?choose=)
     showSelection();
   }catch(e){}
@@ -618,7 +618,7 @@ async function doTrainerLogin(){
     var userData={id:docSnap.id,username:user,role:role,isMaster:role==='master'||role==='ceo',isCeo:role==='ceo',isTester:_isTester(mgr),displayName:mgr.name||user,phone:mgr.phone||'',subStatus:subStatus,trialEndsAt:mgr.trialEndsAt||null,subEndsAt:mgr.subEndsAt||null,referralCode:referralCode};
     try{localStorage.setItem('forge_gestor_session',JSON.stringify(userData));}catch(e){}
     try{localStorage.setItem('trainly_role','trainer');}catch(e){}
-    window.location.replace('https://trainly.online/app');
+    window.location.replace('https://profelipereis.github.io/teste/app');
   }catch(e){errEl.textContent='Erro: '+e.message;}
   finally{btn.textContent='Acessar painel →';btn.disabled=false;}
 }
@@ -673,7 +673,7 @@ async function doAlunoLogin(e){
     var student=Object.assign({id:snap.docs[0].id},snap.docs[0].data());
     try{localStorage.setItem('forge_student_session',JSON.stringify(student));}catch(e){}
     try{localStorage.setItem('trainly_role','aluno');}catch(e){}
-    window.location.replace('https://trainly.online/aluno');
+    window.location.replace('https://profelipereis.github.io/teste/aluno');
   }catch(err){errEl.textContent='Erro: '+err.message;}
   finally{btn.disabled=false;btn.textContent='Acessar ficha →';}
 }
